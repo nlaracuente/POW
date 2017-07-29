@@ -40,6 +40,18 @@ public class Player : MonoBehaviour
     float anglePad = 5f;
 
     /// <summary>
+    /// Here to position the ray cast ray on the Y axis when checking for collision
+    /// </summary>
+    [SerializeField]
+    float rayHeight = 1.5f;
+
+    /// <summary>
+    /// LayerMask for objects the player cannot walk through
+    /// </summary>
+    [SerializeField]
+    LayerMask obstacleMask;
+
+    /// <summary>
     /// The direction the player wants to move
     /// </summary>
     Vector3 inputVector = Vector3.zero;
@@ -47,13 +59,11 @@ public class Player : MonoBehaviour
     /// <summary>
     /// The direction the player is currently moving
     /// </summary>
-    [SerializeField]
     Vector3 moveDirection = Vector3.zero;
 
     /// <summary>
     /// Where the player wants to move
     /// </summary>
-    [SerializeField]
     Vector3 targetPosition = Vector3.zero;
 
     /// <summary>
@@ -163,7 +173,47 @@ public class Player : MonoBehaviour
         // since the player can change it to zero while moving
         this.moveDirection = this.inputVector;
         this.targetPosition = curPosition + this.moveDirection * this.tileScale;
-        StartCoroutine("SmoothMove", this.targetPosition);
+
+        // As long as the path is cleared then the player can move
+        if(this.IsDestinationAvailable(curPosition, this.targetPosition, this.moveDirection, this.tileScale)) {
+            StartCoroutine("SmoothMove", this.targetPosition);
+        }
+    }
+    
+    /// <summary>
+    /// Returns true if the given position does not contain an obstacle
+    /// </summary>
+    /// <param name="position"></param>
+    /// <returns></returns>
+    bool IsDestinationAvailable(Vector3 currentPosition, Vector3 targetDestination, Vector3 direction, float rayDistance)
+    {
+        bool isAvailable = true;
+
+        // The origin starts at the bottom of the feet
+        // We want to raise it up to waist level
+        Vector3 origin = new Vector3(
+            currentPosition.x,
+            this.rayHeight,
+            currentPosition.z
+        );
+
+        // The same thing happens with the destination
+        Vector3 destination = new Vector3(
+            targetDestination.x,
+            this.rayHeight,
+            targetDestination.z
+        );
+
+        // Draw the line to see where the raycast will go
+        Debug.DrawLine(origin, destination, Color.red);
+        
+        Ray ray = new Ray(origin, direction);
+        RaycastHit hitInfo;
+        if(Physics.Raycast(ray, out hitInfo, rayDistance, this.obstacleMask)) {
+            isAvailable = false;
+        }
+
+        return isAvailable;
     }
 
     /// <summary>
@@ -217,12 +267,6 @@ public class Player : MonoBehaviour
         this.canRotate = false;
         
         while(Vector3.Distance(targetPosition, this.transform.position) > this.distancePad) {
-            //Vector3 newPosition = Vector3.Lerp(
-            //    this.rigidbody.position, 
-            //    targetPosition, 
-            //    this.moveSpeed * Time.fixedDeltaTime
-            //);
-
             Vector3 newPosition = this.rigidbody.position + this.moveDirection * this.moveSpeed * Time.fixedDeltaTime;
             this.rigidbody.MovePosition(newPosition);
             yield return new WaitForFixedUpdate();
@@ -232,4 +276,6 @@ public class Player : MonoBehaviour
         this.canMove = true;
         this.canRotate = true;
     }
+
+
 }
