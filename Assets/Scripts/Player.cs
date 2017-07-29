@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -6,7 +7,7 @@ using UnityEngine;
 /// Controls the player movement, rotation, and actions
 /// </summary>
 [RequireComponent(typeof(Rigidbody))]
-public class Player : MonoBehaviour
+public class Player : MonoBehaviour, IRespawnable
 {
     /// <summary>
     /// The scale of the floor tile in unity's unit
@@ -67,6 +68,11 @@ public class Player : MonoBehaviour
     Vector3 targetPosition = Vector3.zero;
 
     /// <summary>
+    /// The last position where the player was not falling
+    /// </summary>
+    Vector3 lastSafePosition = Vector3.zero;
+
+    /// <summary>
     /// The desired rotation to apply
     /// </summary>
     Quaternion targetRotation = Quaternion.identity;
@@ -115,7 +121,7 @@ public class Player : MonoBehaviour
 
         if(this.canMove) {
             this.Move();
-        }        
+        }
     }
 
     /// <summary>
@@ -277,5 +283,13 @@ public class Player : MonoBehaviour
         this.canRotate = true;
     }
 
-
+    /// <summary>
+    /// Player enter a condition that calls for a resapwn
+    /// Place the player on the last known "safe" position
+    /// </summary>
+    public void Respawn()
+    {
+        this.rigidbody.useGravity = false;
+        this.rigidbody.position = this.targetPosition;
+    }
 }
