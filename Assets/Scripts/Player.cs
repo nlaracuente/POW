@@ -77,6 +77,7 @@ public class Player : MonoBehaviour, IRespawnable
     /// <summary>
     /// Where the player wants to move
     /// </summary>
+    [SerializeField]
     Vector3 targetPosition = Vector3.zero;
 
     /// <summary>
@@ -117,7 +118,7 @@ public class Player : MonoBehaviour, IRespawnable
     void Start()
     {
         this.rigidbody = GetComponent<Rigidbody>();
-        this.targetPosition = this.transform.position;
+        this.targetPosition = this.rigidbody.position;
         this.targetRotation = this.rigidbody.rotation;
     }
 
@@ -140,36 +141,6 @@ public class Player : MonoBehaviour, IRespawnable
 
         if(this.canMove) {
             this.Move();
-        }
-
-        // this.UpdateLastSafePosition();
-    }
-
-    /// <summary>
-    /// Checks if the player has reached their destination
-    /// If there's a floor tile underneath then this is a safe position
-    /// Otherwise, trigger a fall and prevent movement and rotation
-    /// </summary>
-    void UpdateLastSafePosition()
-    {
-        
-        Vector3 origin = new Vector3(this.transform.position.x, this.feetHeight, this.transform.position.z);
-
-        // Draw the line to see where the raycast will go
-        Debug.DrawLine(origin, origin + Vector3.down * this.distanceToFloor, Color.red);
-
-        Ray ray = new Ray(origin, Vector3.down);
-        RaycastHit hitInfo;
-
-        // Floor...safe
-        if( Physics.Raycast(ray, out hitInfo, this.distanceToFloor, this.floorMask) ) {
-            this.lastSafePosition = new Vector3(this.transform.position.x, 0f, this.transform.position.z);
-
-        // No floor...fall
-        } else {
-            this.canMove = false;
-            this.canRotate = false;
-            this.rigidbody.useGravity = true;
         }
     }
 
@@ -219,15 +190,23 @@ public class Player : MonoBehaviour, IRespawnable
 
         // Ensures the Y axis remains are 0
         Vector3 curPosition = new Vector3(
-            this.transform.position.x,
+            this.rigidbody.position.x,
             0f,
-            this.transform.position.z
+            this.rigidbody.position.z
         );
 
         // Store the current input vector as the direction
         // since the player can change it to zero while moving
         this.moveDirection = this.inputVector;
-        this.targetPosition = curPosition + this.moveDirection * this.tileScale;
+        
+        Vector3 desiredPosition = curPosition + this.moveDirection * this.tileScale;
+
+        // We want to 0 out the y and remove the floating numbers since we work with whole numbers
+        this.targetPosition = new Vector3(
+            (int)desiredPosition.x,
+            0f,
+            (int)desiredPosition.z
+        );
 
         // As long as the path is cleared then the player can move
         if(this.IsDestinationAvailable(curPosition, this.targetPosition, this.moveDirection, this.tileScale)) {
@@ -283,7 +262,7 @@ public class Player : MonoBehaviour, IRespawnable
         this.canMove = false;
         this.canRotate = false;
 
-        while(Quaternion.Angle(this.transform.rotation, targetRotation) > this.anglePad) {
+        while(Quaternion.Angle(this.rigidbody.rotation, targetRotation) > this.anglePad) {
 
             Quaternion newRotation = Quaternion.Lerp(
                 this.rigidbody.rotation, 
@@ -300,10 +279,10 @@ public class Player : MonoBehaviour, IRespawnable
         this.rigidbody.rotation = targetRotation;
 
         // Y position is changed during rotation so let us reset it
-        this.transform.position = new Vector3(
-            this.transform.position.x,
+        this.rigidbody.position = new Vector3(
+            this.rigidbody.position.x,
             0f,
-            this.transform.position.z
+            this.rigidbody.position.z
         );
 
         this.canMove = true;
@@ -321,15 +300,58 @@ public class Player : MonoBehaviour, IRespawnable
         this.canMove = false;
         this.canRotate = false;
         
-        while(Vector3.Distance(targetPosition, this.transform.position) > this.distancePad) {
+        while(Vector3.Distance(targetPosition, this.rigidbody.position) > this.distancePad) {
             Vector3 newPosition = this.rigidbody.position + this.moveDirection * this.moveSpeed * Time.fixedDeltaTime;
             this.rigidbody.MovePosition(newPosition);
             yield return new WaitForFixedUpdate();
         }
 
+        // Snap into position
         this.rigidbody.position = targetPosition;
-        this.canMove = true;
-        this.canRotate = true;
+        this.rigidbody.velocity = Vector3.zero;
+
+        // Check if the new position is a save place to stand 
+        // otherwise trigger a fall
+        if( this.IsGrounded() ) {
+            this.canMove = true;
+            this.canRotate = true;
+            this.lastSafePosition = this.rigidbody.position;
+        } else {
+            this.TriggerFall();
+        }
+    }
+
+    /// <summary>
+    /// Returns true if the player is standing on a surface they can stand on
+    /// </summary>
+    /// <returns></returns>
+    bool IsGrounded()
+    {
+        bool isGrounded = false;
+        Vector3 origin = new Vector3(this.rigidbody.position.x, this.feetHeight, this.rigidbody.position.z);
+
+        // Draw the line to see where the raycast will go
+        Debug.DrawLine(origin, origin + Vector3.down * this.distanceToFloor, Color.red);
+
+        Ray ray = new Ray(origin, Vector3.down);
+        RaycastHit hitInfo;
+
+        // Is standing on something
+        if(Physics.Raycast(ray, out hitInfo, this.distanceToFloor)) {
+            isGrounded = true;
+        }
+
+        return isGrounded;
+    }
+
+    /// <summary>
+    /// Causes the player to fall down
+    /// </summary>
+    void TriggerFall()
+    {
+        this.canMove = false;
+        this.canRotate = false;
+        this.rigidbody.useGravity = true;
     }
 
     /// <summary>
@@ -338,10 +360,13 @@ public class Player : MonoBehaviour, IRespawnable
     /// </summary>
     public void Respawn()
     {
-        this.rigidbody.position = this.lastSafePosition;
-        this.canMove = true;
-        this.canRotate = true;
+        // Reset position
         this.rigidbody.useGravity = false;
         this.rigidbody.velocity = Vector3.zero;
+        this.rigidbody.position = this.targetPosition = this.lastSafePosition;
+
+        // Restore control
+        this.canMove = true;
+        this.canRotate = true;
     }
 }
