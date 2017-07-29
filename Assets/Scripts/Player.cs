@@ -158,7 +158,9 @@ public class Player : MonoBehaviour, IRespawnable
             v = 0f;
         }
 
-        this.inputVector = new Vector3(h, 0f, v);
+        Vector3 targetDirection = new Vector3(h, 0f, v);
+        //Vector3 targetInput = Camera.main.transform.TransformDirection(targetDirection);
+        this.inputVector = targetDirection;
     }
 
     /// <summary>
@@ -299,10 +301,27 @@ public class Player : MonoBehaviour, IRespawnable
         // Must wait until movement is done to move and/or change rotation
         this.canMove = false;
         this.canRotate = false;
+
+        // Always ignore the "y" position since the player could be moving up or down
+        Vector3 currentPosition = new Vector3(
+            this.rigidbody.position.x,
+            0f,
+            this.rigidbody.position.z
+        );
         
-        while(Vector3.Distance(targetPosition, this.rigidbody.position) > this.distancePad) {
+        while(Vector3.Distance(targetPosition, currentPosition) > this.distancePad) {
             Vector3 newPosition = this.rigidbody.position + this.moveDirection * this.moveSpeed * Time.fixedDeltaTime;
             this.rigidbody.MovePosition(newPosition);
+
+            // Get new current position
+            currentPosition = new Vector3(
+                this.rigidbody.position.x,
+                0f,
+                this.rigidbody.position.z
+            );
+
+            Debug.Log("Distance: " + Vector3.Distance(targetPosition, currentPosition));
+
             yield return new WaitForFixedUpdate();
         }
 
