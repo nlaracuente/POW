@@ -9,10 +9,17 @@ using UnityEngine;
 public class Player : MonoBehaviour
 {
     /// <summary>
+    /// The scale of the floor tile in unity's unit
+    /// This is to control the distance the player moves
+    /// </summary>
+    [SerializeField]
+    float tileScale = 1f;
+
+    /// <summary>
     /// How fast the player moves
     /// </summary>
     [SerializeField]
-    float moveSpeed = 15f;
+    float moveSpeed = 5f;
 
     /// <summary>
     /// How fast the player rotates
@@ -38,8 +45,15 @@ public class Player : MonoBehaviour
     Vector3 inputVector = Vector3.zero;
 
     /// <summary>
+    /// The direction the player is currently moving
+    /// </summary>
+    [SerializeField]
+    Vector3 moveDirection = Vector3.zero;
+
+    /// <summary>
     /// Where the player wants to move
     /// </summary>
+    [SerializeField]
     Vector3 targetPosition = Vector3.zero;
 
     /// <summary>
@@ -85,7 +99,13 @@ public class Player : MonoBehaviour
     /// </summary>
     void LateUpdate()
     {
-        this.Rotate();
+        if(this.canRotate) {
+            this.Rotate();
+        }
+
+        if(this.canMove) {
+            this.Move();
+        }        
     }
 
     /// <summary>
@@ -106,16 +126,11 @@ public class Player : MonoBehaviour
     }
 
     /// <summary>
-    /// Uses the input vector to determine if the player is facing in the desired move direction
-    /// Rotates the rigidbody until it is close enough to snap into rotation
+    /// Calculates the target rotation based on player input
+    /// Triggers the SmoothRotate coroutine
     /// </summary>
     void Rotate()
     {
-        // Wait until rotation is done
-        if(this.rigidbody.rotation != this.targetRotation) {
-            return;
-        }
-
         // Cannot rotate when the input vector is Zero
         if(this.inputVector == Vector3.zero) {
             return;
@@ -127,6 +142,31 @@ public class Player : MonoBehaviour
     }
 
     /// <summary>
+    /// Calculates the target destination based on player input
+    /// Triggers the SmoothMove corouting
+    /// </summary>
+    void Move()
+    {
+        // No movement required
+        if(this.inputVector == Vector3.zero) {
+            return;
+        }
+
+        // Ensures the Y axis remains are 0
+        Vector3 curPosition = new Vector3(
+            this.transform.position.x,
+            0f,
+            this.transform.position.z
+        );
+
+        // Store the current input vector as the direction
+        // since the player can change it to zero while moving
+        this.moveDirection = this.inputVector;
+        this.targetPosition = curPosition + this.moveDirection * this.tileScale;
+        StartCoroutine("SmoothMove", this.targetPosition);
+    }
+
+    /// <summary>
     /// Continues to moves towards the given target rotation until close enough
     /// Snaps into the desire rotation once reached
     /// </summary>
@@ -134,7 +174,12 @@ public class Player : MonoBehaviour
     /// <returns></returns>
     IEnumerator SmoothRotate(Quaternion targetRotation)
     {
+        // Must wait until rotation is done to move and/or change rotation
+        this.canMove = false;
+        this.canRotate = false;
+
         while(Quaternion.Angle(this.transform.rotation, targetRotation) > this.anglePad) {
+
             Quaternion newRotation = Quaternion.Lerp(
                 this.rigidbody.rotation, 
                 targetRotation, 
@@ -148,5 +193,43 @@ public class Player : MonoBehaviour
 
         // Snap into place
         this.rigidbody.rotation = targetRotation;
+
+        // Y position is changed during rotation so let us reset it
+        this.transform.position = new Vector3(
+            this.transform.position.x,
+            0f,
+            this.transform.position.z
+        );
+
+        this.canMove = true;
+        this.canRotate = true;
+    }
+
+    /// <summary>
+    /// Moves the rigidbody to the target position
+    /// </summary>
+    /// <param name="targetPosition"></param>
+    /// <returns></returns>
+    IEnumerator SmoothMove(Vector3 targetPosition)
+    {
+        // Must wait until movement is done to move and/or change rotation
+        this.canMove = false;
+        this.canRotate = false;
+        
+        while(Vector3.Distance(targetPosition, this.transform.position) > this.distancePad) {
+            //Vector3 newPosition = Vector3.Lerp(
+            //    this.rigidbody.position, 
+            //    targetPosition, 
+            //    this.moveSpeed * Time.fixedDeltaTime
+            //);
+
+            Vector3 newPosition = this.rigidbody.position + this.moveDirection * this.moveSpeed * Time.fixedDeltaTime;
+            this.rigidbody.MovePosition(newPosition);
+            yield return new WaitForFixedUpdate();
+        }
+
+        this.rigidbody.position = targetPosition;
+        this.canMove = true;
+        this.canRotate = true;
     }
 }
