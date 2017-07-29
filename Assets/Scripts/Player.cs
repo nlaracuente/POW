@@ -41,16 +41,28 @@ public class Player : MonoBehaviour, IRespawnable
     float anglePad = 5f;
 
     /// <summary>
-    /// Here to position the ray cast ray on the Y axis when checking for collision
+    /// Where to position the ray when checking for obstacles
     /// </summary>
     [SerializeField]
     float rayHeight = 1.5f;
+
+    /// <summary>
+    /// Where to position the ray when checking for floor
+    /// </summary>
+    [SerializeField]
+    float feetHeight = .25f;
 
     /// <summary>
     /// LayerMask for objects the player cannot walk through
     /// </summary>
     [SerializeField]
     LayerMask obstacleMask;
+
+    /// <summary>
+    /// The layer associated with the floor
+    /// </summary>
+    [SerializeField]
+    LayerMask floorMask;
 
     /// <summary>
     /// The direction the player wants to move
@@ -70,6 +82,7 @@ public class Player : MonoBehaviour, IRespawnable
     /// <summary>
     /// The last position where the player was not falling
     /// </summary>
+    [SerializeField]
     Vector3 lastSafePosition = Vector3.zero;
 
     /// <summary>
@@ -91,6 +104,12 @@ public class Player : MonoBehaviour, IRespawnable
     /// A reference to the rigidbody component
     /// </summary>
     new Rigidbody rigidbody;
+
+    /// <summary>
+    /// How far to cast the ray when checking for the floor
+    /// </summary>
+    [SerializeField]
+    float distanceToFloor;
 
     /// <summary>
     /// Initialize
@@ -121,6 +140,36 @@ public class Player : MonoBehaviour, IRespawnable
 
         if(this.canMove) {
             this.Move();
+        }
+
+        // this.UpdateLastSafePosition();
+    }
+
+    /// <summary>
+    /// Checks if the player has reached their destination
+    /// If there's a floor tile underneath then this is a safe position
+    /// Otherwise, trigger a fall and prevent movement and rotation
+    /// </summary>
+    void UpdateLastSafePosition()
+    {
+        
+        Vector3 origin = new Vector3(this.transform.position.x, this.feetHeight, this.transform.position.z);
+
+        // Draw the line to see where the raycast will go
+        Debug.DrawLine(origin, origin + Vector3.down * this.distanceToFloor, Color.red);
+
+        Ray ray = new Ray(origin, Vector3.down);
+        RaycastHit hitInfo;
+
+        // Floor...safe
+        if( Physics.Raycast(ray, out hitInfo, this.distanceToFloor, this.floorMask) ) {
+            this.lastSafePosition = new Vector3(this.transform.position.x, 0f, this.transform.position.z);
+
+        // No floor...fall
+        } else {
+            this.canMove = false;
+            this.canRotate = false;
+            this.rigidbody.useGravity = true;
         }
     }
 
@@ -289,7 +338,10 @@ public class Player : MonoBehaviour, IRespawnable
     /// </summary>
     public void Respawn()
     {
+        this.rigidbody.position = this.lastSafePosition;
+        this.canMove = true;
+        this.canRotate = true;
         this.rigidbody.useGravity = false;
-        this.rigidbody.position = this.targetPosition;
+        this.rigidbody.velocity = Vector3.zero;
     }
 }
