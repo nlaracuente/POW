@@ -70,35 +70,28 @@ public class Player : MonoBehaviour, IRespawnable
     Vector3 inputVector = Vector3.zero;
 
     /// <summary>
-    /// The direction the player is currently moving
-    /// </summary>
-    Vector3 moveDirection = Vector3.zero;
-
-    /// <summary>
-    /// Where the player wants to move
-    /// </summary>
-    Vector3 targetPosition = Vector3.zero;
-
-    /// <summary>
     /// The last position where the player was not falling
     /// </summary>
     [SerializeField]
     Vector3 lastSafePosition = Vector3.zero;
 
     /// <summary>
-    /// The desired rotation to apply
-    /// </summary>
-    Quaternion targetRotation = Quaternion.identity;
-
-    /// <summary>
     /// When false prevents the move logic from triggering
     /// </summary>
+    [SerializeField]
     bool canMove = true;
 
     /// <summary>
     /// When false prevents the rotate logic from triggering
     /// </summary>
+    [SerializeField]
     bool canRotate = true;
+
+    /// <summary>
+    /// True when the player is falling
+    /// </summary>
+    [SerializeField]
+    bool isFalling = false;
 
     /// <summary>
     /// A reference to the rigidbody component
@@ -165,8 +158,6 @@ public class Player : MonoBehaviour, IRespawnable
         this.levelController = FindObjectOfType<LevelController>();
         this.companion = FindObjectOfType<Companion>();
         this.rigidbody = GetComponent<Rigidbody>();
-        this.targetPosition = this.rigidbody.position;
-        this.targetRotation = this.rigidbody.rotation;
     }
 
     /// <summary>
@@ -197,8 +188,45 @@ public class Player : MonoBehaviour, IRespawnable
             if(this.IsButtonPressed("Action")) {
                 this.ToggleCompanionAction();
             }
-
             this.Move();
+        }
+
+        // Always check the player is grounded
+        this.CheckIsGrounded();
+    }
+
+    /// <summary>
+    /// Checks if the player is still grounded triggering a "fall" when they are not
+    /// </summary>
+    void CheckIsGrounded()
+    {
+        // Check if the new position is a save place to stand 
+        // otherwise trigger a fall
+        GameObject GOUnderneath = this.levelController.GetObjectUnderPosition(this.transform.position, 
+                                                                              this.feetHeight, 
+                                                                              this.distanceToFloor);
+
+        if( GOUnderneath != null ) {
+            // Only save it if it is a floor
+            if(GOUnderneath.GetComponent<FloorTile>() != null) {
+                
+                // Ground found while falling
+                // Stop falling and set the player on the tile
+                if(this.isFalling) {
+                    this.isFalling = false;
+                    this.rigidbody.useGravity = false;
+                    this.transform.position = GOUnderneath.transform.position;
+                }
+
+                this.lastSafePosition = this.transform.position;
+            }
+
+        // Begin fall if the player is done moving
+        // As this is a grid-based movement we want the player to "snap" into place before falling
+        } else if(!this.isFalling && this.canMove){
+            Debug.Log("Fall");
+            this.isFalling = true;
+            this.TriggerFall();
         }
     }
 
@@ -254,8 +282,8 @@ public class Player : MonoBehaviour, IRespawnable
         }
 
         // Calculate and trigger smooth rotate to target
-        this.targetRotation = Quaternion.LookRotation(this.inputVector, Vector3.up);
-        StartCoroutine("SmoothRotate", this.targetRotation);
+        Quaternion targetRotation = Quaternion.LookRotation(this.inputVector, Vector3.up);
+        StartCoroutine("SmoothRotate", targetRotation);
     }
 
     /// <summary>
@@ -294,46 +322,30 @@ public class Player : MonoBehaviour, IRespawnable
     }
 
     /// <summary>
-    /// Calculates the target destination based on player input
-    /// Triggers the SmoothMove corouting
+    /// Checks if the position in the desired input vector is available
+    /// as in there's no obstacle in the way and triggers a smooth move
+    /// towards the destination
     /// </summary>
     void Move()
     {
         // No movement required
         if(this.inputVector == Vector3.zero) {
             return;
-        }
-
-        // Ensures the Y axis remains are 0
-        Vector3 curPosition = new Vector3(
-            this.rigidbody.position.x,
-            0f,
-            this.rigidbody.position.z
-        );
-
-        // Store the current input vector as the direction
-        // since the player can change it to zero while moving
-        this.moveDirection = this.inputVector;
-        
-        Vector3 desiredPosition = curPosition + this.moveDirection * this.tileScale;
-
-        // We want to 0 out the y and remove the floating numbers since we work with whole numbers
-        this.targetPosition = new Vector3(
-            (int)desiredPosition.x,
-            0f,
-            (int)desiredPosition.z
-        );
+        }        
+              
+        // Where the player wants to go
+        Vector3 desiredPosition = this.transform.position + this.inputVector * this.tileScale;
 
         // As long as the path is cleared then the player can move
-        bool isAvailable = this.levelController.IsDestinationAvailable(curPosition,
-                                                                       this.targetPosition,
-                                                                       this.moveDirection,
+        bool isAvailable = this.levelController.IsDestinationAvailable(this.transform.position,
+                                                                       desiredPosition,
+                                                                       this.inputVector,
                                                                        this.tileScale,
                                                                        this.rayHeight,
                                                                        this.obstacleMask);
         // Move
         if(isAvailable) {
-            StartCoroutine("SmoothMove", this.targetPosition);
+            StartCoroutine("SmoothMove", desiredPosition);
         }
     }
 
@@ -364,14 +376,6 @@ public class Player : MonoBehaviour, IRespawnable
 
         // Snap into place
         this.rigidbody.rotation = targetRotation;
-
-        // Y position is changed during rotation so let us reset it
-        this.rigidbody.position = new Vector3(
-            this.rigidbody.position.x,
-            0f,
-            this.rigidbody.position.z
-        );
-
         this.canMove = true;
         this.canRotate = true;
     }
@@ -386,53 +390,30 @@ public class Player : MonoBehaviour, IRespawnable
         // Must wait until movement is done to move and/or change rotation
         this.canMove = false;
         this.canRotate = false;
-
-        // Always ignore the "y" position since the player could be moving up or down
-        Vector3 currentPosition = new Vector3(
-            this.rigidbody.position.x,
-            0f,
-            this.rigidbody.position.z
-        );
         
-        while(Vector3.Distance(targetPosition, currentPosition) > this.distancePad) {
-            Vector3 newPosition = this.rigidbody.position + this.moveDirection * this.moveSpeed * Time.fixedDeltaTime;
-            this.rigidbody.MovePosition(newPosition);
-
-            // Get new current position
-            currentPosition = new Vector3(
-                this.rigidbody.position.x,
-                0f,
-                this.rigidbody.position.z
-            );
-            yield return new WaitForFixedUpdate();
+        // Continue to move until destination is reached
+        while(Vector3.Distance(this.transform.position, targetPosition) > this.distancePad) {
+            Vector3 destination = Vector3.MoveTowards(this.transform.position, targetPosition, this.moveSpeed * Time.deltaTime);
+            this.transform.position = destination;
+            yield return new WaitForEndOfFrame();
         }
 
         // Snap into position
-        this.rigidbody.position = targetPosition;
-        this.rigidbody.velocity = Vector3.zero;
+        this.transform.position = targetPosition;
+        this.canMove = true;
+        this.canRotate = true;
 
-        // Check if the new position is a save place to stand 
-        // otherwise trigger a fall
-        GameObject GOUnderneath = this.levelController.GetObjectUnderPosition(this.rigidbody.position, this.feetHeight, this.distanceToFloor);
-
-        if( GOUnderneath != null ) {
-            this.canMove = true;
-            this.canRotate = true;
-
-            // Only save it if it is a floor
-            if(GOUnderneath.GetComponent<FloorTile>() != null) {
-                this.lastSafePosition = this.rigidbody.position;
-            }
-        } else {
-            this.TriggerFall();
-        }
+        // Make sure that the player is still grounded
+        this.CheckIsGrounded();
     }
 
     /// <summary>
     /// Causes the player to fall down
+    /// Stops all coroutine to ensure no movement is happening other than falling
     /// </summary>
     void TriggerFall()
     {
+        this.StopAllCoroutines();
         this.canMove = false;
         this.canRotate = false;
         this.rigidbody.useGravity = true;
@@ -465,7 +446,7 @@ public class Player : MonoBehaviour, IRespawnable
         // Reset position
         this.rigidbody.useGravity = false;
         this.rigidbody.velocity = Vector3.zero;
-        this.rigidbody.position = this.targetPosition = this.lastSafePosition;
+        this.rigidbody.position = this.lastSafePosition;
 
         // Restore control
         this.canMove = true;

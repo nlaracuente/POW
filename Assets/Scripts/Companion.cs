@@ -52,6 +52,14 @@ public class Companion : PowerSource, IRespawnable
     private bool isFalling;
 
     /// <summary>
+    /// The body collider is the collider that detects collision
+    /// We need to disable this when the companion is attached to the player
+    /// so that the player does not think it is touching "solid" ground
+    /// </summary>
+    [SerializeField]
+    Collider bodyCollider;
+
+    /// <summary>
     /// Initialize
     /// </summary>
     void Start()
@@ -95,6 +103,8 @@ public class Companion : PowerSource, IRespawnable
     /// </summary>
     public void PickedUp(Transform parent, Vector3 position)
     {
+        this.bodyCollider.enabled = false;
+        this.rigidbody.useGravity = false;
         this.transform.SetParent(parent, true);
         this.transform.position = position;
     }
@@ -107,7 +117,8 @@ public class Companion : PowerSource, IRespawnable
     public void Dropped(Vector3 position)
     {
         this.transform.SetParent(null);
-        this.transform.position = position;
+        this.rigidbody.useGravity = true;
+        this.bodyCollider.enabled = true;
     }
 
     /// <summary>
@@ -141,6 +152,7 @@ public class Companion : PowerSource, IRespawnable
         // Reset position
         this.isFalling = false;
         this.rigidbody.useGravity = false;
+        this.bodyCollider.enabled = true;
         this.rigidbody.velocity = Vector3.zero;
         this.rigidbody.position = this.origin;
         this.transform.position = this.origin;
