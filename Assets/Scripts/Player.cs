@@ -177,7 +177,7 @@ public class Player : MonoBehaviour, IRespawnable
     /// <summary>
     /// Update the rigidbody's position and rotation
     /// </summary>
-    void LateUpdate()
+    void FixedUpdate()
     {
         if(this.canRotate) {
             this.Rotate();
@@ -206,25 +206,25 @@ public class Player : MonoBehaviour, IRespawnable
                                                                               this.feetHeight, 
                                                                               this.distanceToFloor);
 
-        if( GOUnderneath != null ) {
+        if(GOUnderneath != null) {
             // Only save it if it is a floor
             if(GOUnderneath.GetComponent<FloorTile>() != null) {
-                
+
                 // Ground found while falling
                 // Stop falling and set the player on the tile
                 if(this.isFalling) {
                     this.isFalling = false;
                     this.rigidbody.useGravity = false;
-                    this.transform.position = GOUnderneath.transform.position;
+                    this.rigidbody.velocity = Vector3.zero;
+                    StartCoroutine("SmoothMove", GOUnderneath.transform.position);
                 }
 
                 this.lastSafePosition = this.transform.position;
             }
 
-        // Begin fall if the player is done moving
-        // As this is a grid-based movement we want the player to "snap" into place before falling
-        } else if(!this.isFalling && this.canMove){
-            Debug.Log("Fall");
+            // Begin fall if the player is done moving
+            // As this is a grid-based movement we want the player to "snap" into place before falling
+        } else if(!this.isFalling && this.canMove) {
             this.isFalling = true;
             this.TriggerFall();
         }

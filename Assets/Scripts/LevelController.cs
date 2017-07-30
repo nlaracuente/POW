@@ -20,14 +20,14 @@ public class LevelController : MonoBehaviour
         // We want to raise it up to waist level
         Vector3 origin = new Vector3(
             currentPosition.x,
-            rayHeight,
+            currentPosition.y + rayHeight,
             currentPosition.z
         );
 
         // The same thing happens with the destination
         Vector3 destination = new Vector3(
             targetDestination.x,
-            rayHeight,
+            targetDestination.y + rayHeight,
             targetDestination.z
         );
 
@@ -53,7 +53,7 @@ public class LevelController : MonoBehaviour
     public GameObject GetObjectUnderPosition(Vector3 position, float rayStart, float rayEnd)
     {
         GameObject GO = null;
-        Vector3 origin = new Vector3(position.x, rayStart, position.z);
+        Vector3 origin = new Vector3(position.x, position.y + rayStart, position.z);
 
         // Draw the line to see where the raycast will go
         Debug.DrawLine(origin, origin + Vector3.down * rayEnd, Color.red);
