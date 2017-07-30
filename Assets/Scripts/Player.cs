@@ -113,10 +113,27 @@ public class Player : MonoBehaviour, IRespawnable
     float distanceToFloor;
 
     /// <summary>
+    /// Keeps a list of buttons being pressed
+    /// Used to trigger events only once per presses
+    /// </summary>
+    List<string> buttonsPressed = new List<string>();
+
+    /// <summary>
+    /// True when the player is carrying the companion
+    /// </summary>
+    bool isCarryingCompanion = false;
+
+    /// <summary>
+    /// A reference to the companion power supply object the player can carry around
+    /// </summary>
+    Companion companion;
+
+    /// <summary>
     /// Initialize
     /// </summary>
     void Start()
     {
+        this.companion = FindObjectOfType<Companion>();
         this.rigidbody = GetComponent<Rigidbody>();
         this.targetPosition = this.rigidbody.position;
         this.targetRotation = this.rigidbody.rotation;
@@ -139,7 +156,12 @@ public class Player : MonoBehaviour, IRespawnable
             this.Rotate();
         }
 
+        // Player can move which means they can pickup/drop off item now
         if(this.canMove) {
+            if(this.IsButtonPressed("Action")) {
+                this.ToggleCompanionAction();
+            }
+
             this.Move();
         }
     }
@@ -159,8 +181,29 @@ public class Player : MonoBehaviour, IRespawnable
         }
 
         Vector3 targetDirection = new Vector3(h, 0f, v);
-        //Vector3 targetInput = Camera.main.transform.TransformDirection(targetDirection);
         this.inputVector = targetDirection;
+    }
+
+    /// <summary>
+    /// Returns True if the butons is pressed but only the frist time
+    /// </summary>
+    /// <param name="buttonName"></param>
+    /// <returns></returns>
+    bool IsButtonPressed(string buttonName)
+    {
+        bool isPressed = false;
+
+        if(Input.GetAxisRaw(buttonName) > 0) {
+            // Not already pressed, trigger action
+            if(!this.buttonsPressed.Contains(buttonName)) {
+                isPressed = true;
+                this.buttonsPressed.Add(buttonName);
+            }
+        } else {
+            this.buttonsPressed.Remove(buttonName);
+        }
+
+        return isPressed;
     }
 
     /// <summary>
@@ -177,6 +220,41 @@ public class Player : MonoBehaviour, IRespawnable
         // Calculate and trigger smooth rotate to target
         this.targetRotation = Quaternion.LookRotation(this.inputVector, Vector3.up);
         StartCoroutine("SmoothRotate", this.targetRotation);
+    }
+
+    /// <summary>
+    /// Toggles between dropping or picking up the companion
+    /// </summary>
+    void ToggleCompanionAction()
+    {
+        // Player's current position
+        Vector3 playerPosition = new Vector3(
+            this.rigidbody.position.x,
+            0f,
+            this.rigidbody.position.z
+        );
+
+        // Try to pick up the companion
+        if(!this.isCarryingCompanion) {
+            // Companion's current position
+            Vector3 companionPosition = new Vector3(
+                this.companion.transform.position.x,
+                0f,
+                this.companion.transform.position.z
+            );
+            
+            // Player is on top of the companion 
+            // which means they can pick it up
+            if(companionPosition == playerPosition) {
+                this.isCarryingCompanion = true;
+                this.companion.PickedUp(this.transform);
+            }
+
+        // Player dropped the companion
+        } else {
+            this.isCarryingCompanion = false;
+            this.companion.Dropped(playerPosition);
+        }
     }
 
     /// <summary>

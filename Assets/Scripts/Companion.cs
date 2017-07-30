@@ -42,7 +42,7 @@ public class Companion : PowerSource
     /// </summary>
     public void PickedUp(Transform parent)
     {
-        this.transform.SetParent(parent, false);
+        this.transform.SetParent(parent, true);
     }
 
     /// <summary>
