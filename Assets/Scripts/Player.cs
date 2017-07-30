@@ -151,6 +151,12 @@ public class Player : MonoBehaviour, IRespawnable
     Animator animator;
 
     /// <summary>
+    /// True when the player has taken damage
+    /// This helps stop movement
+    /// </summary>
+    bool isDamaged;
+
+    /// <summary>
     /// Initialize
     /// </summary>
     void Start()
@@ -414,7 +420,7 @@ public class Player : MonoBehaviour, IRespawnable
             this.canRotate = true;
 
             // Only save it if it is a floor
-            if(GOUnderneath.layer == LayerMask.NameToLayer("Floor")) {
+            if(GOUnderneath.GetComponent<FloorTile>() != null) {
                 this.lastSafePosition = this.rigidbody.position;
             }
         } else {
@@ -436,6 +442,18 @@ public class Player : MonoBehaviour, IRespawnable
             this.isCarryingCompanion = false;
             this.companion.TriggerFall();
         }
+    }
+
+    /// <summary>
+    /// Called by any object that can damage the player
+    /// Cancels player movement and triggers a respawn
+    /// </summary>
+    public void PlayerDamaged()
+    {
+        StopAllCoroutines();
+        this.canMove = false;
+        this.canRotate = false;
+        this.Respawn();
     }
 
     /// <summary>
