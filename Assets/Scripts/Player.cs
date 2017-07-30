@@ -319,9 +319,6 @@ public class Player : MonoBehaviour, IRespawnable
                 0f,
                 this.rigidbody.position.z
             );
-
-            Debug.Log("Distance: " + Vector3.Distance(targetPosition, currentPosition));
-
             yield return new WaitForFixedUpdate();
         }
 
