@@ -77,7 +77,6 @@ public class Player : MonoBehaviour, IRespawnable
     /// <summary>
     /// Where the player wants to move
     /// </summary>
-    [SerializeField]
     Vector3 targetPosition = Vector3.zero;
 
     /// <summary>
@@ -129,10 +128,22 @@ public class Player : MonoBehaviour, IRespawnable
     Companion companion;
 
     /// <summary>
+    /// Where to child the companion to when it is picked up
+    /// </summary>
+    [SerializeField]
+    Transform companionParent;
+
+    /// <summary>
+    /// A reference to the levelController component
+    /// </summary>
+    LevelController levelController;
+
+    /// <summary>
     /// Initialize
     /// </summary>
     void Start()
     {
+        this.levelController = FindObjectOfType<LevelController>();
         this.companion = FindObjectOfType<Companion>();
         this.rigidbody = GetComponent<Rigidbody>();
         this.targetPosition = this.rigidbody.position;
@@ -247,7 +258,7 @@ public class Player : MonoBehaviour, IRespawnable
             // which means they can pick it up
             if(companionPosition == playerPosition) {
                 this.isCarryingCompanion = true;
-                this.companion.PickedUp(this.transform);
+                this.companion.PickedUp(this.companionParent);
             }
 
         // Player dropped the companion
@@ -289,45 +300,16 @@ public class Player : MonoBehaviour, IRespawnable
         );
 
         // As long as the path is cleared then the player can move
-        if(this.IsDestinationAvailable(curPosition, this.targetPosition, this.moveDirection, this.tileScale)) {
+        bool isAvailable = this.levelController.IsDestinationAvailable(curPosition,
+                                                                       this.targetPosition,
+                                                                       this.moveDirection,
+                                                                       this.tileScale,
+                                                                       this.rayHeight,
+                                                                       this.obstacleMask);
+        // Move
+        if(isAvailable) {
             StartCoroutine("SmoothMove", this.targetPosition);
         }
-    }
-    
-    /// <summary>
-    /// Returns true if the given position does not contain an obstacle
-    /// </summary>
-    /// <param name="position"></param>
-    /// <returns></returns>
-    bool IsDestinationAvailable(Vector3 currentPosition, Vector3 targetDestination, Vector3 direction, float rayDistance)
-    {
-        bool isAvailable = true;
-
-        // The origin starts at the bottom of the feet
-        // We want to raise it up to waist level
-        Vector3 origin = new Vector3(
-            currentPosition.x,
-            this.rayHeight,
-            currentPosition.z
-        );
-
-        // The same thing happens with the destination
-        Vector3 destination = new Vector3(
-            targetDestination.x,
-            this.rayHeight,
-            targetDestination.z
-        );
-
-        // Draw the line to see where the raycast will go
-        Debug.DrawLine(origin, destination, Color.red);
-        
-        Ray ray = new Ray(origin, direction);
-        RaycastHit hitInfo;
-        if(Physics.Raycast(ray, out hitInfo, rayDistance, this.obstacleMask)) {
-            isAvailable = false;
-        }
-
-        return isAvailable;
     }
 
     /// <summary>
@@ -406,36 +388,19 @@ public class Player : MonoBehaviour, IRespawnable
 
         // Check if the new position is a save place to stand 
         // otherwise trigger a fall
-        if( this.IsGrounded() ) {
+        GameObject GOUnderneath = this.levelController.GetObjectUnderPosition(this.rigidbody.position, this.feetHeight, this.distanceToFloor);
+
+        if( GOUnderneath != null ) {
             this.canMove = true;
             this.canRotate = true;
-            this.lastSafePosition = this.rigidbody.position;
+
+            // Only save it if it is a floor
+            if(GOUnderneath.layer == LayerMask.NameToLayer("Floor")) {
+                this.lastSafePosition = this.rigidbody.position;
+            }
         } else {
             this.TriggerFall();
         }
-    }
-
-    /// <summary>
-    /// Returns true if the player is standing on a surface they can stand on
-    /// </summary>
-    /// <returns></returns>
-    bool IsGrounded()
-    {
-        bool isGrounded = false;
-        Vector3 origin = new Vector3(this.rigidbody.position.x, this.feetHeight, this.rigidbody.position.z);
-
-        // Draw the line to see where the raycast will go
-        Debug.DrawLine(origin, origin + Vector3.down * this.distanceToFloor, Color.red);
-
-        Ray ray = new Ray(origin, Vector3.down);
-        RaycastHit hitInfo;
-
-        // Is standing on something
-        if(Physics.Raycast(ray, out hitInfo, this.distanceToFloor)) {
-            isGrounded = true;
-        }
-
-        return isGrounded;
     }
 
     /// <summary>
@@ -446,6 +411,12 @@ public class Player : MonoBehaviour, IRespawnable
         this.canMove = false;
         this.canRotate = false;
         this.rigidbody.useGravity = true;
+
+        // Apply the same to the companion
+        if(this.isCarryingCompanion) {
+            this.isCarryingCompanion = false;
+            this.companion.TriggerFall();
+        }
     }
 
     /// <summary>

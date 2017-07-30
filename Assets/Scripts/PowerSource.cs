@@ -44,9 +44,8 @@ public class PowerSource : MonoBehaviour
     /// <summary>
     /// Restores power by the given wuantity
     /// </summary>
-    /// <param name="total"></param>
-    public void RestorePower(int total)
+    public void Recharge()
     {
-        this.currentPower = Mathf.Min(this.maxPower, this.currentPower + total);
+        this.currentPower = this.maxPower;
     }
 }
