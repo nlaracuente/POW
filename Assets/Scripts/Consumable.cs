@@ -38,9 +38,11 @@ public class Consumable : MonoBehaviour, IConsumable
 
     /// <summary>
     /// How many seconds to wait before consuming power again
+    /// Half a minute 
     /// </summary>
     [SerializeField]
-    protected int drainDelay = 1;
+    [Range(0.5f, 60f)]
+    protected float drainDelay = 1;
 
     /// <summary>
     /// The current power source in range powering this consumable
