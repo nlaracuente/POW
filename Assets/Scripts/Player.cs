@@ -150,6 +150,11 @@ public class Player : MonoBehaviour, IRespawnable
     bool isDamaged;
 
     /// <summary>
+    /// True: allows the player to controlling the avatar
+    /// </summary>
+    private bool playerEnabled = true;
+
+    /// <summary>
     /// Initialize
     /// </summary>
     void Start()
@@ -165,6 +170,11 @@ public class Player : MonoBehaviour, IRespawnable
     /// </summary>
     void Update()
     {
+        // Not allowed to do anything
+        if(!this.playerEnabled) {
+            return;
+        }
+
         this.SavePlayerInput();
 
         if(this.isCarryingCompanion) {
@@ -179,13 +189,18 @@ public class Player : MonoBehaviour, IRespawnable
     /// </summary>
     void FixedUpdate()
     {
+        // Not allowed to do anything
+        if(!this.playerEnabled) {
+            return;
+        }
+
         if(this.canRotate) {
             this.Rotate();
         }
 
         // Player can move which means they can pickup/drop off item now
         if(this.canMove) {
-            if(this.IsButtonPressed("Action")) {
+            if(this.IsButtonPressed("Fire1")) {
                 this.ToggleCompanionAction();
             }
             this.Move();
@@ -200,6 +215,11 @@ public class Player : MonoBehaviour, IRespawnable
     /// </summary>
     void CheckIsGrounded()
     {
+        // No need to check for the time being
+        if(!this.playerEnabled) {
+            return;
+        }
+
         // Check if the new position is a save place to stand 
         // otherwise trigger a fall
         GameObject GOUnderneath = this.levelController.GetObjectUnderPosition(this.transform.position, 
@@ -449,6 +469,25 @@ public class Player : MonoBehaviour, IRespawnable
         this.rigidbody.position = this.lastSafePosition;
 
         // Restore control
+        this.canMove = true;
+        this.canRotate = true;
+    }
+
+    /// <summary>
+    /// Prevents player interactions
+    /// </summary>
+    public void DisablePlayerControl()
+    {
+        StopAllCoroutines();
+        this.playerEnabled = false;
+    }
+
+    /// <summary>
+    /// Re-enables player interactions
+    /// </summary>
+    public void EnablePlayerControl()
+    {
+        this.playerEnabled = true;
         this.canMove = true;
         this.canRotate = true;
     }
