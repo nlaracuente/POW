@@ -123,6 +123,12 @@ public class Player : MonoBehaviour, IRespawnable
     bool isCarryingCompanion = false;
 
     /// <summary>
+    /// The speed to play the player's hover animation while carrying the companion
+    /// </summary>
+    [SerializeField]
+    float carryingAnimSpeed = 0.5f;
+
+    /// <summary>
     /// A reference to the companion power supply object the player can carry around
     /// </summary>
     Companion companion;
@@ -139,10 +145,17 @@ public class Player : MonoBehaviour, IRespawnable
     LevelController levelController;
 
     /// <summary>
+    /// A reference to the animator component
+    /// </summary>
+    [SerializeField]
+    Animator animator;
+
+    /// <summary>
     /// Initialize
     /// </summary>
     void Start()
     {
+        this.animator = this.transform.FindChild("Model").GetComponent<Animator>();
         this.levelController = FindObjectOfType<LevelController>();
         this.companion = FindObjectOfType<Companion>();
         this.rigidbody = GetComponent<Rigidbody>();
@@ -156,6 +169,12 @@ public class Player : MonoBehaviour, IRespawnable
     void Update()
     {
         this.SavePlayerInput();
+
+        if(this.isCarryingCompanion) {
+            this.animator.speed = this.carryingAnimSpeed;
+        } else {
+            this.animator.speed = 1f;
+        }
     }
 
     /// <summary>
@@ -258,7 +277,7 @@ public class Player : MonoBehaviour, IRespawnable
             // which means they can pick it up
             if(companionPosition == playerPosition) {
                 this.isCarryingCompanion = true;
-                this.companion.PickedUp(this.companionParent);
+                this.companion.PickedUp(this.transform, this.companionParent.position);
             }
 
         // Player dropped the companion

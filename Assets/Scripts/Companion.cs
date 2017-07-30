@@ -20,8 +20,7 @@ public class Companion : PowerSource, IRespawnable
     /// How fast to spin the companion when it has power
     /// </summary>
     [SerializeField]
-    [Range(1, 100)]
-    float rotationSpeed = 10f;
+    float rotationSpeed = -30f;
 
     /// <summary>
     /// A reference to the rigidbody component
@@ -94,9 +93,10 @@ public class Companion : PowerSource, IRespawnable
     /// Player picked up the companion
     /// Companion child itself to the given parent
     /// </summary>
-    public void PickedUp(Transform parent)
+    public void PickedUp(Transform parent, Vector3 position)
     {
         this.transform.SetParent(parent, true);
+        this.transform.position = position;
     }
 
     /// <summary>

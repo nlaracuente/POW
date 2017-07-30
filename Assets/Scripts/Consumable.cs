@@ -143,8 +143,12 @@ public class Consumable : MonoBehaviour, IConsumable
     {
         PowerSource source = other.GetComponent<PowerSource>();
 
+        // Power down immedeatly 
         if(source == this.powerSource) {
+            StopCoroutine("DrainPowerSupply");
+            this.Deactivate();
             this.powerSource = null;
+            
         }     
     }
 }
