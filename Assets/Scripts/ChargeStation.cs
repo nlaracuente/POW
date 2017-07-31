@@ -8,14 +8,33 @@ using UnityEngine;
 public class ChargeStation : MonoBehaviour
 {
     /// <summary>
+    /// A reference to the power source being charged
+    /// </summary>
+    PowerSource source;
+
+    /// <summary>
     /// Recharges all power sources within range
     /// </summary>
     /// <param name="other"></param>
     void OnTriggerStay(Collider other)
     {
         PowerSource source = other.GetComponent<PowerSource>();
-        if(source != null) {
-            source.Recharge();
+        if(source != null && this.source == null) {
+            this.source = source;
+            source.IsCharging = true;
+        }
+    }
+
+    /// <summary>
+    /// No longer charging the power supply
+    /// </summary>
+    /// <param name="other"></param>
+    void OnTriggerExit(Collider other)
+    {
+        PowerSource source = other.GetComponent<PowerSource>();
+        if(source != null && source == this.source) {
+            this.source.IsCharging = false;
+            this.source = null;
         }
     }
 }

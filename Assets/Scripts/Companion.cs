@@ -60,26 +60,52 @@ public class Companion : PowerSource, IRespawnable
     Collider bodyCollider;
 
     /// <summary>
+    /// Contains a queue of all the list that represents the total
+    /// amount of power the companion has left
+    /// </summary>
+    Queue<GameObject> lights = new Queue<GameObject>();
+
+    /// <summary>
     /// Initialize
     /// </summary>
     void Start()
     {
+        this.QueueLights();
+        this.maxPower = this.currentPower = this.lights.Count;
         this.rigidbody = GetComponent<Rigidbody>();
         this.origin = this.rigidbody.position;
         this.levelController = FindObjectOfType<LevelController>();
     }
 
     /// <summary>
-    /// Spins the companion based on the current power to indicate  
-    /// how much power it has left
+    /// Finds all the "lights" the companion uses to represent 
+    /// </summary>
+    void QueueLights()
+    {
+        GameObject powerGO = this.transform.FindChild("Power").gameObject;
+        for(int i = 0; i < powerGO.transform.childCount; i++) {
+            GameObject light = powerGO.transform.GetChild(i).gameObject;
+
+            // Already queued
+            if(this.lights.Contains(light)) {
+                continue;
+            }
+
+            // Make sure it is turned on
+            light.GetComponent<MeshRenderer>().enabled = true;
+            this.lights.Enqueue(light);
+        }
+    }
+
+    /// <summary>
+    /// Spins when the is being carried to match the player's hover spin
     /// </summary>
     void Update()
     {
-        if(this.currentPower > 0) {
-            this.transform.Rotate(new Vector3(0f, this.rotationSpeed * this.currentPower * Time.deltaTime, 0f));
-        } else {
-            this.transform.rotation = Quaternion.identity;
-        }        
+        // Rotate only 
+        if(this.transform.parent != null) {
+            this.transform.Rotate(new Vector3(0f, this.rotationSpeed * Time.deltaTime, 0f));
+        }
     }
 
     /// <summary>
@@ -129,7 +155,7 @@ public class Companion : PowerSource, IRespawnable
     /// <param name="destination"></param>
     public void Recalled(Vector3 destination)
     {
-
+        
     }
 
     /// <summary>
@@ -156,5 +182,25 @@ public class Companion : PowerSource, IRespawnable
         this.rigidbody.velocity = Vector3.zero;
         this.rigidbody.position = this.origin;
         this.transform.position = this.origin;
+    }
+
+    /// <summary>
+    /// Overrides parent so that we can disable one of the lights
+    /// </summary>
+    /// <param name="total"></param>
+    public override void ConsumePower(int total)
+    {
+        base.ConsumePower(total);
+        GameObject light = this.lights.Dequeue();
+        light.GetComponent<MeshRenderer>().enabled = false;
+    }
+
+    /// <summary>
+    /// Re-queues the lights 
+    /// </summary>
+    public override void Recharge()
+    {
+        base.Recharge();
+        this.QueueLights();
     }
 }

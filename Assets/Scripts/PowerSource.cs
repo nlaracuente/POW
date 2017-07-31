@@ -12,31 +12,56 @@ public class PowerSource : MonoBehaviour
     /// Total power the companion can have
     /// </summary>
     [SerializeField]
-    protected int maxPower = 10;
+    protected int maxPower = 30;
 
     /// <summary>
     /// The current power the companion
     /// </summary>
     [SerializeField]
-    protected int currentPower = 10;
+    protected int currentPower = 30;
 
     /// <summary>
-    /// Returns true when the powersupply has enough power to consume the cost
+    /// How many seconds to wait before taking power away
     /// </summary>
-    /// <param name="cost"></param>
-    /// <returns></returns>
-    public bool CanBeConsumed(int cost)
+    [SerializeField]
+    protected float drainDelay = 1f;
+
+    /// <summary>
+    /// True while the 
+    /// </summary>
+    [SerializeField]
+    bool isCharging = false;
+    public bool IsCharging
     {
-        // Reducing the power source to 0 without going under
-        // means it had enough to power it
-        return this.currentPower - cost > -1;
+        get { return this.isCharging; }
+
+        // Initiate/Stop drain coroutine based on whether or not it is being charged
+        set
+        {
+            if(!value) {
+                StartCoroutine("DrainPowerSupply");
+            } else {
+                StopCoroutine("DrainPowerSupply");
+            }            
+            this.isCharging = value;
+            this.Recharge();
+        } 
     }
 
+    /// <summary>
+    /// Returns true while there is still power
+    /// </summary>
+    public bool HasPower
+    {
+        get { return this.currentPower > 0; }
+    }
+
+    
     /// <summary>
     /// Total amount of power to consume
     /// </summary>
     /// <param name="total"></param>
-    public void ConsumePower(int total)
+    public virtual void ConsumePower(int total)
     {
         this.currentPower = Mathf.Max(0, this.currentPower - total);
     }
@@ -44,8 +69,22 @@ public class PowerSource : MonoBehaviour
     /// <summary>
     /// Restores power by the given wuantity
     /// </summary>
-    public void Recharge()
+    public virtual void Recharge()
     {
         this.currentPower = this.maxPower;
     }
+
+    /// <summary>
+    /// For as long as the power supply is not being charged then it will drain
+    /// one power every -n- number of seconds
+    /// </summary>
+    /// <returns></returns>
+    IEnumerator DrainPowerSupply()
+    {
+        int drainCost = 1;
+        while(this.HasPower) {
+            yield return new WaitForSeconds(this.drainDelay);
+            this.ConsumePower(drainCost);
+        }
+    } 
 }

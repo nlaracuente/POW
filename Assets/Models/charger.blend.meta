@@ -1,20 +1,15 @@
 fileFormatVersion: 2
-guid: 6b3aafd109167fe4d9598b48d0696a53
-timeCreated: 1501417703
+guid: 97c5c21036eb06a4da66517563dde1b3
+timeCreated: 1501451264
 licenseType: Free
 ModelImporter:
   serializedVersion: 19
   fileIDToRecycleName:
-    100000: spikes
-    100002: //RootNode
-    400000: spikes
-    400002: //RootNode
-    2300000: spikes
-    2300002: //RootNode
-    3300000: spikes
-    3300002: //RootNode
-    4300000: spike-tile
-    4300002: spikes
+    100000: //RootNode
+    400000: //RootNode
+    2300000: //RootNode
+    3300000: //RootNode
+    4300000: charger
     7400000: Default Take
     9500000: //RootNode
   materials:

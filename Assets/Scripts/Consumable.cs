@@ -50,6 +50,34 @@ public class Consumable : MonoBehaviour, IConsumable
     PowerSource powerSource;
 
     /// <summary>
+    /// Checks if there's a power source nearby and tries to consume it
+    /// </summary>
+    public void Update()
+    {
+        if(this.powerSource != null) {
+            this.ConsumePowerSource();
+        } else {
+            this.Deactivate();
+        }
+    }
+
+    /// <summary>
+    /// Activates itself so long as the power source has power
+    /// </summary>
+    /// <param name="source"></param>
+    protected void ConsumePowerSource()
+    {
+        // Still has juice
+        if(this.powerSource.HasPower) {
+            this.Activate();
+
+        // No enough to power up this consumable
+        } else {
+            this.Deactivate();
+        }
+    }
+
+    /// <summary>
     /// Powers on this consumable
     /// </summary>
     /// <param name="source"></param>
@@ -79,59 +107,17 @@ public class Consumable : MonoBehaviour, IConsumable
                 this.animator.SetTrigger("Deactivate");
             }
         }
-    }
+    }    
 
     /// <summary>
-    /// If the given source has enough power to activate this consumable
-    /// then it consumes it and powers itself, otherwise, it deactivates itself
-    /// Triggers the DrainPowerSupply coroutine to consume power again when it needs to
-    /// </summary>
-    /// <param name="source"></param>
-    protected void ConsumePowerSource()
-    {
-        // Still has juice
-        if(this.powerSource.CanBeConsumed(this.powerCost)) {
-            this.Activate();
-            this.powerSource.ConsumePower(this.powerCost);
-            StartCoroutine("DrainPowerSupply");
-
-        // No enough to power up this consumable
-        } else {
-            this.Deactivate();
-        }
-    }
-
-    /// <summary>
-    /// Waits for the time defined in <see cref="this.drainDelay"/> to pass
-    /// before attempting to consume power again
-    /// If the power source is no longer available then it deactivates itself
-    /// </summary>
-    /// <returns></returns>
-    IEnumerator DrainPowerSupply()
-    {
-        yield return new WaitForSeconds(this.drainDelay);
-        
-        // Still have a power source
-        if(this.powerSource != null) {
-            this.ConsumePowerSource();
-
-        // No more power
-        } else {
-            this.Deactivate();
-        }
-    }
-
-    /// <summary>
-    /// If a power source is within range then it attempts to consume it
+    /// Grabs the nearest powersource that it comes in conctact 
     /// </summary>
     void OnTriggerStay(Collider other)
     {
         PowerSource source = other.GetComponent<PowerSource>();
-
-        if(source != null && !this.isActivated) {
+        if(source != null) {
             this.powerSource = source;
-            this.ConsumePowerSource();
-        }        
+        }
     }
 
     /// <summary>
@@ -142,13 +128,9 @@ public class Consumable : MonoBehaviour, IConsumable
     void OnTriggerExit(Collider other)
     {
         PowerSource source = other.GetComponent<PowerSource>();
-
-        // Power down immedeatly 
+        
         if(source == this.powerSource) {
-            StopCoroutine("DrainPowerSupply");
-            this.Deactivate();
             this.powerSource = null;
-            
         }     
     }
 }
