@@ -60,10 +60,42 @@ public class Companion : PowerSource, IRespawnable
     Collider bodyCollider;
 
     /// <summary>
+    /// A reference to the fan game object which spins
+    /// based on the total current power the companion has
+    /// </summary>
+    [SerializeField]
+    GameObject fanGO;
+
+    /// <summary>
+    /// Material color to use when the light is on
+    /// </summary>
+    [SerializeField]
+    Material lightOnMaterial;
+
+    /// <summary>
+    /// Material color to use when the light off
+    /// </summary>
+    [SerializeField]
+    Material lightOffMaterial;
+
+    /// <summary>
     /// Contains a queue of all the list that represents the total
     /// amount of power the companion has left
     /// </summary>
     Queue<GameObject> lights = new Queue<GameObject>();
+
+    /// <summary>
+    /// A reference to the "transform" to follow
+    /// This is so that the companion can "follow" the player
+    /// when picked up
+    /// </summary>
+    Transform followTarget;
+
+    /// <summary>
+    /// How fast to follow the target
+    /// </summary>
+    [SerializeField]
+    float followSpeed = 8f;
 
     /// <summary>
     /// Initialize
@@ -82,19 +114,20 @@ public class Companion : PowerSource, IRespawnable
     /// </summary>
     void QueueLights()
     {
+        // This list is used to reverse the order before creating the queue
+        List<GameObject> lightsGO = new List<GameObject>();
+
         GameObject powerGO = this.transform.Find("Power").gameObject;
         for(int i = 0; i < powerGO.transform.childCount; i++) {
             GameObject light = powerGO.transform.GetChild(i).gameObject;
 
-            // Already queued
-            if(this.lights.Contains(light)) {
-                continue;
-            }
-
             // Make sure it is turned on
-            light.GetComponent<MeshRenderer>().enabled = true;
-            this.lights.Enqueue(light);
+            light.GetComponent<MeshRenderer>().material = this.lightOnMaterial;
+            lightsGO.Add(light);
         }
+
+        lightsGO.Reverse();
+        this.lights = new Queue<GameObject>(lightsGO);
     }
 
     /// <summary>
@@ -102,9 +135,9 @@ public class Companion : PowerSource, IRespawnable
     /// </summary>
     void Update()
     {
-        // Rotate only 
-        if(this.transform.parent != null) {
-            this.transform.Rotate(new Vector3(0f, this.rotationSpeed * Time.deltaTime, 0f));
+        // Rotate only when there's power left
+        if(this.HasPower) {
+            this.fanGO.transform.Rotate(new Vector3(0f, this.rotationSpeed * this.currentPower * Time.deltaTime, 0f));
         }
     }
 
@@ -114,12 +147,15 @@ public class Companion : PowerSource, IRespawnable
     /// </summary>
     void FixedUpdate()
     {
-        if(this.transform.parent == null) {
+        if(this.followTarget == null) {
             bool isGrounded = this.levelController.GetObjectUnderPosition(this.rigidbody.position, this.rayStart, this.rayEnd);
 
             if(!isGrounded && !this.isFalling) {
                 this.TriggerFall();
             }
+        // Follow parent
+        } else {
+            this.transform.position = Vector3.MoveTowards(this.transform.position, followTarget.position, this.followSpeed * Time.fixedDeltaTime);
         }
     }
 
@@ -127,12 +163,11 @@ public class Companion : PowerSource, IRespawnable
     /// Player picked up the companion
     /// Companion child itself to the given parent
     /// </summary>
-    public void PickedUp(Transform parent, Vector3 position)
+    public void PickedUp(Transform parent)
     {
         this.bodyCollider.enabled = false;
         this.rigidbody.useGravity = false;
-        this.transform.SetParent(parent, true);
-        this.transform.position = position;
+        this.followTarget = parent;
     }
 
     /// <summary>
@@ -140,11 +175,11 @@ public class Companion : PowerSource, IRespawnable
     /// Companion positions itself in the given position
     /// </summary>
     /// <param name="position"></param>
-    public void Dropped(Vector3 position)
+    public void Dropped()
     {
-        this.transform.SetParent(null);
         this.rigidbody.useGravity = true;
         this.bodyCollider.enabled = true;
+        this.followTarget = null;
     }
 
     /// <summary>
@@ -152,11 +187,11 @@ public class Companion : PowerSource, IRespawnable
     /// and acts as if the player has picked up the companion
     /// </summary>
     /// <param name="destination"></param>
-    public void Recalled(Transform parent, Vector3 position)
+    public void Recalled(Transform parent)
     {
         if(this.HasPower) {
             this.ConsumePower(this.recallCost);
-            this.PickedUp(parent, position);
+            this.PickedUp(parent);
         }
     }
 
@@ -178,6 +213,7 @@ public class Companion : PowerSource, IRespawnable
     public void Respawn()
     {
         // Reset position
+        this.followTarget = null;
         this.isFalling = false;
         this.rigidbody.useGravity = false;
         this.bodyCollider.enabled = true;
@@ -193,8 +229,15 @@ public class Companion : PowerSource, IRespawnable
     public override void ConsumePower(int total)
     {
         base.ConsumePower(total);
-        GameObject light = this.lights.Dequeue();
-        light.GetComponent<MeshRenderer>().enabled = false;
+
+        // There may be a chance that the recall and the last drain supply
+        // coroutine drained the last light already so we will not try to
+        // drain unless we still have lights
+        if(this.lights.Count > 0) {
+            GameObject lightGO = this.lights.Dequeue();
+            MeshRenderer lightRenderer = lightGO.GetComponent<MeshRenderer>();
+            lightRenderer.material = this.lightOffMaterial;
+        }
     }
 
     /// <summary>

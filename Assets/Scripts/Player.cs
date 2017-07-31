@@ -162,6 +162,26 @@ public class Player : MonoBehaviour, IRespawnable
     bool companionHasBeenPickedup = false;
 
     /// <summary>
+    /// The materials to cycle through and update the player model with
+    /// which gives the illusion of animation
+    /// </summary>
+    [SerializeField]
+    List<Material> bodyMaterials;
+    Queue<Material> materialQueue = new Queue<Material>();
+
+    /// <summary>
+    /// How often to change the player material
+    /// </summary>
+    [SerializeField]
+    float materialChangeTime;
+
+    /// <summary>
+    /// A reference to the body renderer to update the materials
+    /// </summary>
+    [SerializeField]
+    MeshRenderer bodyRenderer;
+
+    /// <summary>
     /// Initialize
     /// </summary>
     void Start()
@@ -173,6 +193,26 @@ public class Player : MonoBehaviour, IRespawnable
 
         // Defaults to original position until player goes into a recharge station
         this.checkpointPosition = this.transform.position;
+
+        this.materialQueue = new Queue<Material>(this.bodyMaterials);
+
+        // Safety precaution, make sure there are no coroutine running
+        StopAllCoroutines();
+        StartCoroutine("ToggleBodyMaterials");
+    }
+
+    /// <summary>
+    /// Runs throughout the life cycle of the game toggling the player's material
+    /// </summary>
+    /// <returns></returns>
+    IEnumerator ToggleBodyMaterials()
+    {
+        while(true) {
+            yield return new WaitForSeconds(this.materialChangeTime);
+            Material newMaterial = this.materialQueue.Dequeue();
+            this.bodyRenderer.material = newMaterial;
+            this.materialQueue.Enqueue(newMaterial);
+        }
     }
 
     /// <summary>
@@ -349,13 +389,13 @@ public class Player : MonoBehaviour, IRespawnable
             if(companionPosition == playerPosition) {
                 this.companionHasBeenPickedup = true;
                 this.isCarryingCompanion = true;
-                this.companion.PickedUp(this.transform, this.companionParent.position);
+                this.companion.PickedUp(this.companionParent);
             }
 
         // Player dropped the companion
         } else {
             this.isCarryingCompanion = false;
-            this.companion.Dropped(playerPosition);
+            this.companion.Dropped();
         }
     }
 
@@ -370,7 +410,7 @@ public class Player : MonoBehaviour, IRespawnable
             return;
         }
 
-        this.companion.Recalled(this.transform, this.companionParent.position);
+        this.companion.Recalled(this.companionParent);
     }
 
     /// <summary>
@@ -460,12 +500,21 @@ public class Player : MonoBehaviour, IRespawnable
     }
 
     /// <summary>
+    /// Stops the player routines that control movement and rotation
+    /// while keeping the material changing routine running
+    /// </summary>
+    void StopPlayerRoutines()
+    {
+        StopCoroutine("SmoothMove");
+        StopCoroutine("SmoothRotate");
+    }
+
+    /// <summary>
     /// Causes the player to fall down
     /// Stops all coroutine to ensure no movement is happening other than falling
     /// </summary>
     void TriggerFall()
     {
-        this.StopAllCoroutines();
         this.canMove = false;
         this.canRotate = false;
         this.rigidbody.useGravity = true;
@@ -483,7 +532,7 @@ public class Player : MonoBehaviour, IRespawnable
     /// </summary>
     public void PlayerDamaged()
     {
-        StopAllCoroutines();
+        this.StopPlayerRoutines();
         this.canMove = false;
         this.canRotate = false;
         this.Respawn();
@@ -511,7 +560,7 @@ public class Player : MonoBehaviour, IRespawnable
     /// </summary>
     public void DisablePlayerControl()
     {
-        StopAllCoroutines();
+        this.StopPlayerRoutines();
         this.playerEnabled = false;
     }
 
