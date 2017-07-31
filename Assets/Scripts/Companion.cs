@@ -102,8 +102,8 @@ public class Companion : PowerSource, IRespawnable
     /// </summary>
     void Awake()
     {
-        this.QueueLights();
-        this.maxPower = this.currentPower = this.lights.Count;
+        this.QueueLights(false);
+        this.maxPower = this.lights.Count;
         this.rigidbody = GetComponent<Rigidbody>();
         this.origin = this.rigidbody.position;
         this.levelController = FindObjectOfType<LevelController>();
@@ -112,7 +112,7 @@ public class Companion : PowerSource, IRespawnable
     /// <summary>
     /// Finds all the "lights" the companion uses to represent 
     /// </summary>
-    void QueueLights()
+    void QueueLights(bool turnedOn = true)
     {
         // This list is used to reverse the order before creating the queue
         List<GameObject> lightsGO = new List<GameObject>();
@@ -122,7 +122,12 @@ public class Companion : PowerSource, IRespawnable
             GameObject light = powerGO.transform.GetChild(i).gameObject;
 
             // Make sure it is turned on
-            light.GetComponent<MeshRenderer>().material = this.lightOnMaterial;
+            if(turnedOn) {
+                light.GetComponent<MeshRenderer>().material = this.lightOnMaterial;
+            } else {
+                light.GetComponent<MeshRenderer>().material = this.lightOffMaterial;
+            }
+            
             lightsGO.Add(light);
         }
 
