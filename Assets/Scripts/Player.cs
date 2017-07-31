@@ -471,6 +471,7 @@ public class Player : MonoBehaviour, IRespawnable
         // Restore control
         this.canMove = true;
         this.canRotate = true;
+        this.playerEnabled = true;
     }
 
     /// <summary>

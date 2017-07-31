@@ -10,7 +10,13 @@ public class DamageCollider : MonoBehaviour
     void OnTriggerStay(Collider other)
     {
         if(other.tag == "Player") {
-            other.GetComponent<Player>().PlayerDamaged();
+            Player player = other.GetComponent<Player>();
+            player.DisablePlayerControl();
+
+            // Snap to this tile 
+            player.transform.position = this.transform.position;
+            
+            player.PlayerDamaged();
         }
     }
 }
