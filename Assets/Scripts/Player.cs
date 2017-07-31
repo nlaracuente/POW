@@ -182,6 +182,11 @@ public class Player : MonoBehaviour, IRespawnable
     MeshRenderer bodyRenderer;
 
     /// <summary>
+    /// True when the companion is within range to be picked up
+    /// </summary>
+    bool canPickupCompanion = false;
+
+    /// <summary>
     /// Initialize
     /// </summary>
     void Start()
@@ -386,7 +391,7 @@ public class Player : MonoBehaviour, IRespawnable
             
             // Player is on top of the companion 
             // which means they can pick it up
-            if(companionPosition == playerPosition) {
+            if(this.canPickupCompanion) {
                 this.companionHasBeenPickedup = true;
                 this.isCarryingCompanion = true;
                 this.companion.PickedUp(this.companionParent);
@@ -581,5 +586,34 @@ public class Player : MonoBehaviour, IRespawnable
     public void UpdateCheckpoint(Vector3 position)
     {
         this.checkpointPosition = position;
+    }
+
+    /// <summary>
+    /// Checks if the player is within range of the companion to pick them
+    /// </summary>
+    /// <param name="other"></param>
+    void OnTriggerStay(Collider other)
+    {
+        // Ignore if alreay carrying it
+        if(this.isCarryingCompanion) {
+            return;
+        }
+
+        // Then we can "pickup"
+        if(other.gameObject == this.companion.gameObject) {
+            this.canPickupCompanion = true;
+        }
+    }
+
+    /// <summary>
+    /// Once the companion is no longer in range, then we cannot pick it up
+    /// </summary>
+    /// <param name="other"></param>
+    void OnTriggerExit(Collider other)
+    {
+        // No longer in range
+        if(other.gameObject == this.companion.gameObject) {
+            this.canPickupCompanion = false;
+        }
     }
 }

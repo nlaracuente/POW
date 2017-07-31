@@ -98,6 +98,12 @@ public class Companion : PowerSource, IRespawnable
     float followSpeed = 8f;
 
     /// <summary>
+    /// How close to get to the target before snapping into place
+    /// </summary>
+    [SerializeField]
+    float distanceToTarget = 0.05f;
+
+    /// <summary>
     /// Initialize
     /// </summary>
     void Awake()
@@ -160,7 +166,13 @@ public class Companion : PowerSource, IRespawnable
             }
         // Follow parent
         } else {
-            this.transform.position = Vector3.MoveTowards(this.transform.position, followTarget.position, this.followSpeed * Time.fixedDeltaTime);
+
+            // Distance is close enough, just snap into place
+            if(Vector3.Distance(this.followTarget.position, this.transform.position) < this.distanceToTarget) {
+                this.transform.position = followTarget.position;
+            } else {
+                this.transform.position = Vector3.MoveTowards(this.transform.position, followTarget.position, this.followSpeed * Time.fixedDeltaTime);
+            }            
         }
     }
 
@@ -250,6 +262,12 @@ public class Companion : PowerSource, IRespawnable
     /// </summary>
     public override void Recharge()
     {
+        // Only when not following a target
+        // Already full
+        if(this.followTarget != null || this.currentPower == this.maxPower) {
+            return;
+        }
+
         base.Recharge();
         this.QueueLights();
     }
