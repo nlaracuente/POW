@@ -69,6 +69,7 @@ public class TeleportTrigger : MonoBehaviour
     /// <param name="target"></param>
     IEnumerator Teleport(Player player)
     {
+        AudioManager.instance.PlaySound(AudioManager.SoundName.TeleportalUsed);
         player.DisablePlayerControl();
 
         // Snap to this tile 

@@ -550,6 +550,7 @@ public class Player : MonoBehaviour, IRespawnable
     /// </summary>
     void TriggerFall()
     {
+        AudioManager.instance.PlaySound(AudioManager.SoundName.PlayerFalls);
         this.isFalling = true;
         this.rigidbody.useGravity = true;
 

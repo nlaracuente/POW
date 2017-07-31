@@ -38,23 +38,21 @@ public class Consumable : MonoBehaviour, IConsumable
     bool isDeactivated = true;
 
     /// <summary>
-    /// Total power needed to activate this consumable
-    /// </summary>
-    [SerializeField]
-    protected int powerCost = 1;
-
-    /// <summary>
-    /// How many seconds to wait before consuming power again
-    /// Half a minute 
-    /// </summary>
-    [SerializeField]
-    [Range(0.5f, 60f)]
-    protected float drainDelay = 1;
-
-    /// <summary>
     /// The current power source in range powering this consumable
     /// </summary>
     PowerSource powerSource;
+
+    /// <summary>
+    /// Name of the sound clip to play when the consumable is activated
+    /// </summary>
+    [SerializeField]
+    protected AudioManager.SoundName activeClipName;
+
+    /// <summary>
+    /// Name of the sound clip to play when the consumable is deactivated
+    /// </summary>
+    [SerializeField]
+    protected AudioManager.SoundName deactiveClipName;
 
     /// <summary>
     /// Checks if there's a power source nearby and tries to consume it
@@ -92,6 +90,8 @@ public class Consumable : MonoBehaviour, IConsumable
     {
         // Play the animation only once
         if(!this.isActivated) {
+            AudioManager.instance.PlaySound(this.activeClipName);
+
             this.isActivated = true;
             this.isDeactivated = false;
 
@@ -112,6 +112,7 @@ public class Consumable : MonoBehaviour, IConsumable
         }
 
         if(!this.isDeactivated ) {
+            AudioManager.instance.PlaySound(this.deactiveClipName);
             this.isActivated = false;
             this.isDeactivated = true;
 

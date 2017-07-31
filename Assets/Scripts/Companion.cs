@@ -188,6 +188,7 @@ public class Companion : PowerSource, IRespawnable
     /// </summary>
     public void PickedUp(Transform parent)
     {
+        AudioManager.instance.PlaySound(AudioManager.SoundName.CompanionPickedUp);
         this.bodyCollider.enabled = false;
         this.rigidbody.useGravity = false;
         this.targetToFollow = parent;
@@ -205,6 +206,7 @@ public class Companion : PowerSource, IRespawnable
     /// <param name="position"></param>
     public void Dropped()
     {
+        AudioManager.instance.PlaySound(AudioManager.SoundName.CompanionDropped);
         this.rigidbody.useGravity = true;
         this.bodyCollider.enabled = true;
         this.targetToFollow = null;
@@ -218,7 +220,8 @@ public class Companion : PowerSource, IRespawnable
     /// <param name="destination"></param>
     public void Recalled(Transform parent)
     {
-        if(this.HasPower) {
+        AudioManager.instance.PlaySound(AudioManager.SoundName.CompanionPickedUp);
+        if(this.currentPower >= this.recallCost) {
             this.ConsumePower(this.recallCost);
             this.transform.position = this.player.transform.position;
         }
@@ -263,9 +266,15 @@ public class Companion : PowerSource, IRespawnable
         // coroutine drained the last light already so we will not try to
         // drain unless we still have lights
         if(this.lights.Count > 0) {
+            AudioManager.instance.PlaySound(AudioManager.SoundName.CompanionDrain);
             GameObject lightGO = this.lights.Dequeue();
             MeshRenderer lightRenderer = lightGO.GetComponent<MeshRenderer>();
             lightRenderer.material = this.lightOffMaterial;
+        }
+
+        // Out of energy power down
+        if(!this.HasPower) { 
+            AudioManager.instance.PlaySound(AudioManager.SoundName.CompanionPowerDown);
         }
     }
 
@@ -280,6 +289,7 @@ public class Companion : PowerSource, IRespawnable
             return;
         }
 
+        AudioManager.instance.PlaySound(AudioManager.SoundName.CompanionCharge);
         base.Recharge();
         this.QueueLights();
     }
