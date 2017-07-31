@@ -199,6 +199,11 @@ public class Player : MonoBehaviour, IRespawnable
     bool isMoving = false;
 
     /// <summary>
+    /// True when the player triggered a respawn
+    /// </summary>
+    bool respawnTriggered = false;
+
+    /// <summary>
     /// This is just for visibility
     /// </summary>
     [SerializeField]
@@ -257,6 +262,9 @@ public class Player : MonoBehaviour, IRespawnable
         } else {
             this.animator.speed = 1f;
         }
+
+        // Always check the player is grounded
+        this.CheckIsGrounded();
     }
 
     /// <summary>
@@ -277,9 +285,6 @@ public class Player : MonoBehaviour, IRespawnable
         if(this.canMove) {
             this.Move();
         }
-
-        // Always check the player is grounded
-        this.CheckIsGrounded();
 
         // Now that movement has been applied we can try check for actions
         this.PlayerActions();
@@ -314,6 +319,18 @@ public class Player : MonoBehaviour, IRespawnable
         } else {
             this.companionRecalled = false;
         }
+
+        // Respawn
+        if(Input.GetButton("Respawn")) {
+
+            // Not recalled yet
+            if(!this.respawnTriggered) {
+                this.Respawn();
+            }
+        } else {
+            this.respawnTriggered = false;
+        }
+
     }
 
     /// <summary>
@@ -339,8 +356,10 @@ public class Player : MonoBehaviour, IRespawnable
             }
        
         // No gound found fall
-        }else if(GOUnderneath == null && !this.isFalling && !this.isMoving) {
-            this.TriggerFall();
+        }else {
+            if(!this.isMoving) {
+                this.TriggerFall();
+            }
         }
     }
 
@@ -528,7 +547,7 @@ public class Player : MonoBehaviour, IRespawnable
         // since actions can only be done when the player has snapped to a tile to keep grid-movement
         this.PlayerActions();
         this.canMove = true;
-        this.canRotate = true;        
+        this.canRotate = true;
 
         // Make sure that the player is still grounded
         this.CheckIsGrounded();
@@ -550,6 +569,11 @@ public class Player : MonoBehaviour, IRespawnable
     /// </summary>
     void TriggerFall()
     {
+        /// Already falling
+        if(this.isFalling) {
+            return;
+        }
+
         AudioManager.instance.PlaySound(AudioManager.SoundName.PlayerFalls);
         this.isFalling = true;
         this.rigidbody.useGravity = true;

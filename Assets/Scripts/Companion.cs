@@ -221,10 +221,7 @@ public class Companion : PowerSource, IRespawnable
     public void Recalled(Transform parent)
     {
         AudioManager.instance.PlaySound(AudioManager.SoundName.CompanionPickedUp);
-        if(this.currentPower >= this.recallCost) {
-            this.ConsumePower(this.recallCost);
-            this.transform.position = this.player.transform.position;
-        }
+        this.transform.position = this.player.transform.position;
     }
 
     /// <summary>
