@@ -104,10 +104,16 @@ public class Companion : PowerSource, IRespawnable
     float distanceToTarget = 0.05f;
 
     /// <summary>
+    /// A reference to the player script
+    /// </summary>
+    Player player;
+
+    /// <summary>
     /// Initialize
     /// </summary>
     void Awake()
     {
+        this.player = FindObjectOfType<Player>();
         this.QueueLights(false);
         this.maxPower = this.lights.Count;
         this.rigidbody = GetComponent<Rigidbody>();
@@ -185,6 +191,11 @@ public class Companion : PowerSource, IRespawnable
         this.bodyCollider.enabled = false;
         this.rigidbody.useGravity = false;
         this.followTarget = parent;
+        
+        // Notify the player this has been picked up
+        // Also, enables recall since the player has picked it up at least once
+        this.player.isCarryingCompanion = true;
+        this.player.companionHasBeenPickedup = true;
     }
 
     /// <summary>
@@ -197,6 +208,7 @@ public class Companion : PowerSource, IRespawnable
         this.rigidbody.useGravity = true;
         this.bodyCollider.enabled = true;
         this.followTarget = null;
+        this.player.isCarryingCompanion = false;
     }
 
     /// <summary>
@@ -208,7 +220,7 @@ public class Companion : PowerSource, IRespawnable
     {
         if(this.HasPower) {
             this.ConsumePower(this.recallCost);
-            this.PickedUp(parent);
+            this.transform.position = this.player.transform.position;
         }
     }
 

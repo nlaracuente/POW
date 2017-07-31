@@ -94,6 +94,12 @@ public class Player : MonoBehaviour, IRespawnable
     bool isFalling = false;
 
     /// <summary>
+    /// True when the player has recalled the companion but
+    /// is still pressing down the recall option
+    /// </summary>
+    bool companionRecalled = false;
+
+    /// <summary>
     /// A reference to the rigidbody component
     /// </summary>
     new Rigidbody rigidbody;
@@ -113,7 +119,7 @@ public class Player : MonoBehaviour, IRespawnable
     /// <summary>
     /// True when the player is carrying the companion
     /// </summary>
-    bool isCarryingCompanion = false;
+    public bool isCarryingCompanion = false;
 
     /// <summary>
     /// The speed to play the player's hover animation while carrying the companion
@@ -159,7 +165,7 @@ public class Player : MonoBehaviour, IRespawnable
     /// Remains true after the player has picked up the companion at least once
     /// This allows the companion to be recalled
     /// </summary>
-    bool companionHasBeenPickedup = false;
+    public bool companionHasBeenPickedup = false;
 
     /// <summary>
     /// The materials to cycle through and update the player model with
@@ -185,6 +191,11 @@ public class Player : MonoBehaviour, IRespawnable
     /// True when the companion is within range to be picked up
     /// </summary>
     bool canPickupCompanion = false;
+
+    /// <summary>
+    /// True while the player is moving
+    /// </summary>
+    bool isMoving = false;
 
     /// <summary>
     /// Initialize
@@ -260,6 +271,35 @@ public class Player : MonoBehaviour, IRespawnable
 
         // Always check the player is grounded
         this.CheckIsGrounded();
+
+        // Now that movement has been applied we can try check for actions
+        this.PlayerActions();
+    }
+
+    /// <summary>
+    /// Handles processing player actions such as pickup, release companion, and open/close menu
+    /// </summary>
+    void PlayerActions()
+    {
+        // Pickup Companion
+        if(Input.GetButton("Pickup")) {
+            this.PickupCompanion();
+
+        // Release companion
+        } else {
+            this.DropCompanion();
+        }
+
+        // Recall companion
+        if(Input.GetButton("Recall")) {
+
+            // Not recalled yet
+            if(!this.companionRecalled) {
+                this.RecallCompanion();
+            }
+        } else {
+            this.companionRecalled = false;
+        }
     }
 
     /// <summary>
@@ -305,14 +345,6 @@ public class Player : MonoBehaviour, IRespawnable
     /// </summary>
     void SavePlayerInput()
     {
-        if(this.IsButtonPressed("Pickup")) {
-            this.ToggleCompanionAction();
-        }
-
-        if(this.IsButtonPressed("Recall")) {
-            this.RecallCompanion();
-        }
-
         float h = Input.GetAxisRaw("Horizontal");
         float v = Input.GetAxisRaw("Vertical");
 
@@ -334,7 +366,7 @@ public class Player : MonoBehaviour, IRespawnable
     {
         bool isPressed = false;
 
-        if(Input.GetAxisRaw(buttonName) > 0) {
+        if(Input.GetButton(buttonName)) {
             // Not already pressed, trigger action
             if(!this.buttonsPressed.Contains(buttonName)) {
                 isPressed = true;
@@ -364,44 +396,29 @@ public class Player : MonoBehaviour, IRespawnable
     }
 
     /// <summary>
-    /// Toggles between dropping or picking up the companion
+    /// Picks up the companion if not already carrying and is within range
+    /// and the player is not currently moving as we want to keep the "grid-based" movement
     /// </summary>
-    void ToggleCompanionAction()
+    void PickupCompanion()
     {
-        // Must still be moving, wait
-        if(!this.canMove) {
+        if(!this.canPickupCompanion || this.isCarryingCompanion || this.isMoving) {
             return;
         }
 
-        // Player's current position
-        Vector3 playerPosition = new Vector3(
-            this.rigidbody.position.x,
-            0f,
-            this.rigidbody.position.z
-        );
+        this.companion.PickedUp(this.companionParent);
+    }
 
-        // Try to pick up the companion
-        if(!this.isCarryingCompanion) {
-            // Companion's current position
-            Vector3 companionPosition = new Vector3(
-                this.companion.transform.position.x,
-                0f,
-                this.companion.transform.position.z
-            );
-            
-            // Player is on top of the companion 
-            // which means they can pick it up
-            if(this.canPickupCompanion) {
-                this.companionHasBeenPickedup = true;
-                this.isCarryingCompanion = true;
-                this.companion.PickedUp(this.companionParent);
-            }
-
-        // Player dropped the companion
-        } else {
-            this.isCarryingCompanion = false;
-            this.companion.Dropped();
+    /// <summary>
+    /// Drops the companion only if the player is holding and
+    /// the player is not moving
+    /// </summary>
+    void DropCompanion()
+    {
+        if(!this.isCarryingCompanion || this.isMoving) {
+            return;
         }
+
+        this.companion.Dropped();
     }
 
     /// <summary>
@@ -411,10 +428,11 @@ public class Player : MonoBehaviour, IRespawnable
     /// </summary>
     void RecallCompanion()
     {
-        if(!this.companionHasBeenPickedup || this.isCarryingCompanion) {
+        if(!this.companionHasBeenPickedup || this.isCarryingCompanion || this.isMoving) {
             return;
         }
 
+        this.companionRecalled = true;
         this.companion.Recalled(this.companionParent);
     }
 
@@ -487,6 +505,7 @@ public class Player : MonoBehaviour, IRespawnable
         // Must wait until movement is done to move and/or change rotation
         this.canMove = false;
         this.canRotate = false;
+        this.isMoving = true;
         
         // Continue to move until destination is reached
         while(Vector3.Distance(this.transform.position, targetPosition) > this.distancePad) {
@@ -494,11 +513,16 @@ public class Player : MonoBehaviour, IRespawnable
             this.transform.position = destination;
             yield return new WaitForEndOfFrame();
         }
-
+        
         // Snap into position
         this.transform.position = targetPosition;
+        this.isMoving = false;
+        
+        // Since we just finished moving, let's quickly check if the player is performing an action
+        // since actions can only be done when the player has snapped to a tile to keep grid-movement
+        this.PlayerActions();
         this.canMove = true;
-        this.canRotate = true;
+        this.canRotate = true;        
 
         // Make sure that the player is still grounded
         this.CheckIsGrounded();
