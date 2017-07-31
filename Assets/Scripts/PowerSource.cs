@@ -44,7 +44,6 @@ public class PowerSource : MonoBehaviour
                 StopCoroutine("DrainPowerSupply");
             }            
             this.isCharging = value;
-            this.Recharge();
         } 
     }
 
@@ -54,6 +53,16 @@ public class PowerSource : MonoBehaviour
     void Start()
     {
         StartCoroutine("DrainPowerSupply");
+    }
+
+    /// <summary>
+    /// Check if this is recharging and calls the recharge
+    /// </summary>
+    void LateUpdate()
+    {
+        if(this.isCharging) {
+            this.Recharge();
+        }
     }
 
     /// <summary>

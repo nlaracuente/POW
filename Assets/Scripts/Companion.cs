@@ -31,7 +31,7 @@ public class Companion : PowerSource, IRespawnable
     /// Where the companion was first placed
     /// </summary>
     [SerializeField]
-    Vector3 origin;
+    Vector3 respawnPoint;
 
     /// <summary>
     /// A reference to the level controller
@@ -89,7 +89,7 @@ public class Companion : PowerSource, IRespawnable
     /// This is so that the companion can "follow" the player
     /// when picked up
     /// </summary>
-    Transform followTarget;
+    Transform targetToFollow;
 
     /// <summary>
     /// How fast to follow the target
@@ -98,14 +98,26 @@ public class Companion : PowerSource, IRespawnable
     float followSpeed = 8f;
 
     /// <summary>
+    /// How close to get to the target before snapping into place
+    /// </summary>
+    [SerializeField]
+    float distanceToTarget = 0.05f;
+
+    /// <summary>
+    /// A reference to the player script
+    /// </summary>
+    Player player;
+
+    /// <summary>
     /// Initialize
     /// </summary>
     void Awake()
     {
+        this.player = FindObjectOfType<Player>();
         this.QueueLights(false);
         this.maxPower = this.lights.Count;
         this.rigidbody = GetComponent<Rigidbody>();
-        this.origin = this.rigidbody.position;
+        this.respawnPoint = this.rigidbody.position;
         this.levelController = FindObjectOfType<LevelController>();
     }
 
@@ -152,15 +164,21 @@ public class Companion : PowerSource, IRespawnable
     /// </summary>
     void FixedUpdate()
     {
-        if(this.followTarget == null) {
-            bool isGrounded = this.levelController.GetObjectUnderPosition(this.rigidbody.position, this.rayStart, this.rayEnd);
+        if(this.targetToFollow == null) {
+            bool isGrounded = this.levelController.GetObjectUnderPosition(this.rigidbody.position, this.rayStart, this.rayEnd, 0);
 
             if(!isGrounded && !this.isFalling) {
                 this.TriggerFall();
             }
         // Follow parent
         } else {
-            this.transform.position = Vector3.MoveTowards(this.transform.position, followTarget.position, this.followSpeed * Time.fixedDeltaTime);
+
+            // Distance is close enough, just snap into place
+            if(Vector3.Distance(this.targetToFollow.position, this.transform.position) < this.distanceToTarget) {
+                this.transform.position = targetToFollow.position;
+            } else {
+                this.transform.position = Vector3.MoveTowards(this.transform.position, targetToFollow.position, this.followSpeed * Time.fixedDeltaTime);
+            }            
         }
     }
 
@@ -172,7 +190,12 @@ public class Companion : PowerSource, IRespawnable
     {
         this.bodyCollider.enabled = false;
         this.rigidbody.useGravity = false;
-        this.followTarget = parent;
+        this.targetToFollow = parent;
+        
+        // Notify the player this has been picked up
+        // Also, enables recall since the player has picked it up at least once
+        this.player.isCarryingCompanion = true;
+        this.player.companionHasBeenPickedup = true;
     }
 
     /// <summary>
@@ -184,7 +207,8 @@ public class Companion : PowerSource, IRespawnable
     {
         this.rigidbody.useGravity = true;
         this.bodyCollider.enabled = true;
-        this.followTarget = null;
+        this.targetToFollow = null;
+        this.player.isCarryingCompanion = false;
     }
 
     /// <summary>
@@ -196,7 +220,7 @@ public class Companion : PowerSource, IRespawnable
     {
         if(this.HasPower) {
             this.ConsumePower(this.recallCost);
-            this.PickedUp(parent);
+            this.transform.position = this.player.transform.position;
         }
     }
 
@@ -207,7 +231,7 @@ public class Companion : PowerSource, IRespawnable
     public void TriggerFall()
     {
         this.isFalling = true;
-        this.transform.SetParent(null);
+        this.targetToFollow = null;
         this.rigidbody.useGravity = true;
     }
 
@@ -218,13 +242,13 @@ public class Companion : PowerSource, IRespawnable
     public void Respawn()
     {
         // Reset position
-        this.followTarget = null;
+        this.targetToFollow = null;
         this.isFalling = false;
         this.rigidbody.useGravity = false;
         this.bodyCollider.enabled = true;
         this.rigidbody.velocity = Vector3.zero;
-        this.rigidbody.position = this.origin;
-        this.transform.position = this.origin;
+        this.rigidbody.position = this.respawnPoint;
+        this.transform.position = this.respawnPoint;
     }
 
     /// <summary>
@@ -250,7 +274,22 @@ public class Companion : PowerSource, IRespawnable
     /// </summary>
     public override void Recharge()
     {
+        // Only when not following a target
+        // Already full
+        if(this.targetToFollow != null || this.currentPower == this.maxPower) {
+            return;
+        }
+
         base.Recharge();
         this.QueueLights();
+    }
+
+    /// <summary>
+    /// Updates the respawn point so that next time the respawn is called
+    /// this is where the companion will respawn
+    /// </summary>
+    public void UpdateRespawnPoint(Vector3 point)
+    {
+        this.respawnPoint = point;
     }
 }

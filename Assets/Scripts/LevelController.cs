@@ -50,7 +50,7 @@ public class LevelController : MonoBehaviour
     /// <param name="rayStart"></param>
     /// <param name="rayEnd"></param>
     /// <returns></returns>
-    public GameObject GetObjectUnderPosition(Vector3 position, float rayStart, float rayEnd)
+    public GameObject GetObjectUnderPosition(Vector3 position, float rayStart, float rayEnd, LayerMask mask)
     {
         GameObject GO = null;
         Vector3 origin = new Vector3(position.x, position.y + rayStart, position.z);
@@ -62,7 +62,7 @@ public class LevelController : MonoBehaviour
         RaycastHit hitInfo;
 
         // Is standing on something
-        if(Physics.Raycast(ray, out hitInfo, rayEnd)) {
+        if(Physics.Raycast(origin, Vector3.down, out hitInfo, rayEnd, mask)) {
             GO = hitInfo.collider.gameObject;
         }
 
