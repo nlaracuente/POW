@@ -77,7 +77,7 @@ public class TeleportTrigger : MonoBehaviour
         this.isTeleporting = true;
         this.associatedTeleporter.waitingForTarget = true;
 
-        player.transform.position = this.associatedTeleporter.transform.position;
+        player.TeleportTo(this.associatedTeleporter.transform.position);        
         yield return new WaitForSeconds(this.waitTime);
 
         player.EnablePlayerControl();

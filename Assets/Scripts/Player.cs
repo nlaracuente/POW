@@ -640,4 +640,17 @@ public class Player : MonoBehaviour, IRespawnable
             this.canPickupCompanion = false;
         }
     }
+
+    /// <summary>
+    /// Pops the player at the given destination
+    /// Making sure to move the companion too if it is carrying it
+    /// </summary>
+    /// <param name="destination"></param>
+    public void TeleportTo(Vector3 destination)
+    {
+        this.transform.position = destination;
+        if(this.isCarryingCompanion) {
+            this.companion.transform.position = destination;
+        }
+    }
 }
