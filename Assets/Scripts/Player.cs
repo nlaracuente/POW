@@ -195,7 +195,16 @@ public class Player : MonoBehaviour, IRespawnable
     /// <summary>
     /// True while the player is moving
     /// </summary>
+    [SerializeField]
     bool isMoving = false;
+
+    /// <summary>
+    /// This is just for visibility
+    /// </summary>
+    [SerializeField]
+    Vector3 desiredPosition = Vector3.zero;
+    [SerializeField]
+    Vector3 tileUnderneathPosition = Vector3.zero;
 
     /// <summary>
     /// Initialize
@@ -281,6 +290,11 @@ public class Player : MonoBehaviour, IRespawnable
     /// </summary>
     void PlayerActions()
     {
+        // Ignore this since we are still falling
+        if(this.isFalling) {
+            return;
+        }
+
         // Pickup Companion
         if(Input.GetButton("Pickup")) {
             this.PickupCompanion();
@@ -316,25 +330,16 @@ public class Player : MonoBehaviour, IRespawnable
         // otherwise trigger a fall
         GameObject GOUnderneath = this.levelController.GetObjectUnderPosition(this.transform.position, 
                                                                               this.feetHeight, 
-                                                                              this.distanceToFloor);
-
+                                                                              this.distanceToFloor,
+                                                                              this.floorMask);
+        // Ground found while falling
         if(GOUnderneath != null) {
-            // Only save it if it is a floor
-            if(GOUnderneath.GetComponent<FloorTile>() != null) {
-
-                // Ground found while falling
-                // Stop falling and set the player on the tile
-                if(this.isFalling) {
-                    this.isFalling = false;
-                    this.rigidbody.useGravity = false;
-                    this.rigidbody.velocity = Vector3.zero;
-                    StartCoroutine("SmoothMove", GOUnderneath.transform.position);
-                }
+            if(this.isFalling) {
+                this.Landed(GOUnderneath.transform.position);
             }
-
-        // Begin fall if the player is done moving as to perserve the grid-based movement
-        } else if(!this.isFalling && this.canMove) {
-            this.isFalling = true;
+       
+        // No gound found fall
+        }else if(GOUnderneath == null && !this.isFalling && !this.isMoving) {
             this.TriggerFall();
         }
     }
@@ -460,6 +465,7 @@ public class Player : MonoBehaviour, IRespawnable
                                                                        this.obstacleMask);
         // Move
         if(isAvailable) {
+            this.desiredPosition = desiredPosition;
             StartCoroutine("SmoothMove", desiredPosition);
         }
     }
@@ -544,8 +550,7 @@ public class Player : MonoBehaviour, IRespawnable
     /// </summary>
     void TriggerFall()
     {
-        this.canMove = false;
-        this.canRotate = false;
+        this.isFalling = true;
         this.rigidbody.useGravity = true;
 
         // Apply the same to the companion
@@ -553,6 +558,8 @@ public class Player : MonoBehaviour, IRespawnable
             this.isCarryingCompanion = false;
             this.companion.TriggerFall();
         }
+
+        this.DisablePlayerControl();
     }
 
     /// <summary>
@@ -562,9 +569,29 @@ public class Player : MonoBehaviour, IRespawnable
     public void PlayerDamaged()
     {
         this.StopPlayerRoutines();
-        this.canMove = false;
-        this.canRotate = false;
+        this.DisablePlayerControl();
         this.Respawn();
+    }
+
+    /// <summary>
+    /// Processed "landing" on a tile
+    /// </summary>
+    /// <param name="position"></param>
+    void Landed(Vector3 position)
+    {
+        // Reset position
+        this.rigidbody.useGravity = false;
+        this.rigidbody.velocity = Vector3.zero;
+        this.rigidbody.position = this.transform.position = position;
+
+        // Restore control
+        this.isFalling = false;
+        this.EnablePlayerControl();
+
+        // Carrying the companion - make it snap into place
+        if(this.isCarryingCompanion) {
+            this.companion.transform.position = position;
+        }
     }
 
     /// <summary>
@@ -573,15 +600,8 @@ public class Player : MonoBehaviour, IRespawnable
     /// </summary>
     public void Respawn()
     {
-        // Reset position
-        this.rigidbody.useGravity = false;
-        this.rigidbody.velocity = Vector3.zero;
-        this.rigidbody.position = this.checkpointPosition;
 
-        // Restore control
-        this.canMove = true;
-        this.canRotate = true;
-        this.playerEnabled = true;
+        this.Landed(this.checkpointPosition);
     }
 
     /// <summary>
@@ -590,6 +610,8 @@ public class Player : MonoBehaviour, IRespawnable
     public void DisablePlayerControl()
     {
         this.StopPlayerRoutines();
+        this.canMove = false;
+        this.canRotate = false;
         this.playerEnabled = false;
     }
 
@@ -598,9 +620,9 @@ public class Player : MonoBehaviour, IRespawnable
     /// </summary>
     public void EnablePlayerControl()
     {
-        this.playerEnabled = true;
         this.canMove = true;
         this.canRotate = true;
+        this.playerEnabled = true;
     }
 
     /// <summary>
@@ -610,6 +632,11 @@ public class Player : MonoBehaviour, IRespawnable
     public void UpdateCheckpoint(Vector3 position)
     {
         this.checkpointPosition = position;
+
+        // Update the companions' respawn point
+        if(this.isCarryingCompanion) {
+            this.companion.UpdateRespawnPoint(position);
+        }
     }
 
     /// <summary>
