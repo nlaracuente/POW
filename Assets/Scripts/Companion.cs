@@ -13,7 +13,7 @@ public class Companion : PowerSource, IRespawnable
     /// How much power is required to recall the companion
     /// </summary>
     [SerializeField]
-    [Range(1, 100)]
+    [Range(0, 100)]
     int recallCost = 1;
 
     /// <summary>
@@ -148,14 +148,16 @@ public class Companion : PowerSource, IRespawnable
     }
 
     /// <summary>
-    /// Companion is being recalled to the given destination
-    /// Companion will move to destination only if the amount 
-    /// of power needed to recall
+    /// Player is recalling the companion which consumes one power point
+    /// and acts as if the player has picked up the companion
     /// </summary>
     /// <param name="destination"></param>
-    public void Recalled(Vector3 destination)
+    public void Recalled(Transform parent, Vector3 position)
     {
-        
+        if(this.HasPower) {
+            this.ConsumePower(this.recallCost);
+            this.PickedUp(parent, position);
+        }
     }
 
     /// <summary>

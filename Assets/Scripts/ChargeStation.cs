@@ -22,6 +22,11 @@ public class ChargeStation : MonoBehaviour
         if(source != null && this.source == null) {
             this.source = source;
             source.IsCharging = true;
+        } 
+
+        // Updates the player's checkpoint to have them restart here
+        if(other.tag == "Player") {
+            other.GetComponent<Player>().UpdateCheckpoint(this.transform.position);
         }
     }
 

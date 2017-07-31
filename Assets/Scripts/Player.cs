@@ -70,10 +70,10 @@ public class Player : MonoBehaviour, IRespawnable
     Vector3 inputVector = Vector3.zero;
 
     /// <summary>
-    /// The last position where the player was not falling
+    /// Checkpoint where to spawn the player should they die or get hurt
     /// </summary>
     [SerializeField]
-    Vector3 lastSafePosition = Vector3.zero;
+    Vector3 checkpointPosition = Vector3.zero;
 
     /// <summary>
     /// When false prevents the move logic from triggering
@@ -152,7 +152,14 @@ public class Player : MonoBehaviour, IRespawnable
     /// <summary>
     /// True: allows the player to controlling the avatar
     /// </summary>
-    private bool playerEnabled = true;
+    [SerializeField]
+    bool playerEnabled = true;
+
+    /// <summary>
+    /// Remains true after the player has picked up the companion at least once
+    /// This allows the companion to be recalled
+    /// </summary>
+    bool companionHasBeenPickedup = false;
 
     /// <summary>
     /// Initialize
@@ -163,6 +170,9 @@ public class Player : MonoBehaviour, IRespawnable
         this.levelController = FindObjectOfType<LevelController>();
         this.companion = FindObjectOfType<Companion>();
         this.rigidbody = GetComponent<Rigidbody>();
+
+        // Defaults to original position until player goes into a recharge station
+        this.checkpointPosition = this.transform.position;
     }
 
     /// <summary>
@@ -200,9 +210,6 @@ public class Player : MonoBehaviour, IRespawnable
 
         // Player can move which means they can pickup/drop off item now
         if(this.canMove) {
-            if(this.IsButtonPressed("Fire1")) {
-                this.ToggleCompanionAction();
-            }
             this.Move();
         }
 
@@ -227,7 +234,6 @@ public class Player : MonoBehaviour, IRespawnable
                                                                               this.distanceToFloor);
 
         if(GOUnderneath != null) {
-
             // Only save it if it is a floor
             if(GOUnderneath.GetComponent<FloorTile>() != null) {
 
@@ -239,12 +245,9 @@ public class Player : MonoBehaviour, IRespawnable
                     this.rigidbody.velocity = Vector3.zero;
                     StartCoroutine("SmoothMove", GOUnderneath.transform.position);
                 }
-
-                this.lastSafePosition = GOUnderneath.transform.position;
             }
 
-            // Begin fall if the player is done moving
-            // As this is a grid-based movement we want the player to "snap" into place before falling
+        // Begin fall if the player is done moving as to perserve the grid-based movement
         } else if(!this.isFalling && this.canMove) {
             this.isFalling = true;
             this.TriggerFall();
@@ -257,6 +260,14 @@ public class Player : MonoBehaviour, IRespawnable
     /// </summary>
     void SavePlayerInput()
     {
+        if(this.IsButtonPressed("Pickup")) {
+            this.ToggleCompanionAction();
+        }
+
+        if(this.IsButtonPressed("Recall")) {
+            this.RecallCompanion();
+        }
+
         float h = Input.GetAxisRaw("Horizontal");
         float v = Input.GetAxisRaw("Vertical");
 
@@ -312,6 +323,11 @@ public class Player : MonoBehaviour, IRespawnable
     /// </summary>
     void ToggleCompanionAction()
     {
+        // Must still be moving, wait
+        if(!this.canMove) {
+            return;
+        }
+
         // Player's current position
         Vector3 playerPosition = new Vector3(
             this.rigidbody.position.x,
@@ -331,6 +347,7 @@ public class Player : MonoBehaviour, IRespawnable
             // Player is on top of the companion 
             // which means they can pick it up
             if(companionPosition == playerPosition) {
+                this.companionHasBeenPickedup = true;
                 this.isCarryingCompanion = true;
                 this.companion.PickedUp(this.transform, this.companionParent.position);
             }
@@ -340,6 +357,20 @@ public class Player : MonoBehaviour, IRespawnable
             this.isCarryingCompanion = false;
             this.companion.Dropped(playerPosition);
         }
+    }
+
+    /// <summary>
+    /// A recall can only be performed after the player has picked up the companion at least once
+    /// It cannot be done while the player is carrying the companion and only if the companion
+    /// has enough power to be recalled
+    /// </summary>
+    void RecallCompanion()
+    {
+        if(!this.companionHasBeenPickedup || this.isCarryingCompanion) {
+            return;
+        }
+
+        this.companion.Recalled(this.transform, this.companionParent.position);
     }
 
     /// <summary>
@@ -467,7 +498,7 @@ public class Player : MonoBehaviour, IRespawnable
         // Reset position
         this.rigidbody.useGravity = false;
         this.rigidbody.velocity = Vector3.zero;
-        this.rigidbody.position = this.lastSafePosition;
+        this.rigidbody.position = this.checkpointPosition;
 
         // Restore control
         this.canMove = true;
@@ -492,5 +523,14 @@ public class Player : MonoBehaviour, IRespawnable
         this.playerEnabled = true;
         this.canMove = true;
         this.canRotate = true;
+    }
+
+    /// <summary>
+    /// Changes the player's checkpoint to the given position
+    /// </summary>
+    /// <param name="position"></param>
+    public void UpdateCheckpoint(Vector3 position)
+    {
+        this.checkpointPosition = position;
     }
 }
