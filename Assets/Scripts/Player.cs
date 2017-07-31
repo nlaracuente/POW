@@ -227,6 +227,7 @@ public class Player : MonoBehaviour, IRespawnable
                                                                               this.distanceToFloor);
 
         if(GOUnderneath != null) {
+
             // Only save it if it is a floor
             if(GOUnderneath.GetComponent<FloorTile>() != null) {
 
@@ -239,7 +240,7 @@ public class Player : MonoBehaviour, IRespawnable
                     StartCoroutine("SmoothMove", GOUnderneath.transform.position);
                 }
 
-                this.lastSafePosition = this.transform.position;
+                this.lastSafePosition = GOUnderneath.transform.position;
             }
 
             // Begin fall if the player is done moving

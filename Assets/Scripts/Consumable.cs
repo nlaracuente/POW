@@ -18,10 +18,17 @@ public class Consumable : MonoBehaviour, IConsumable
     protected Animator animator;
 
     /// <summary>
+    /// True if this object consumes power once and it is done
+    /// It cannot be deactivated or reactivated
+    /// </summary>
+    [SerializeField]
+    bool isOneTimeConsumable = false;
+
+    /// <summary>
     /// True when the object is actively consuming power
     /// </summary>
     [SerializeField]
-    bool isActivated = false;
+    protected bool isActivated = false;
 
     /// <summary>
     /// True when the consumable is no longer active
@@ -99,6 +106,11 @@ public class Consumable : MonoBehaviour, IConsumable
     /// </summary>
     public void Deactivate()
     {
+        // Can't do this for single use consumables
+        if(this.isOneTimeConsumable) {
+            return;
+        }
+
         if(!this.isDeactivated ) {
             this.isActivated = false;
             this.isDeactivated = true;
@@ -132,5 +144,14 @@ public class Consumable : MonoBehaviour, IConsumable
         if(source == this.powerSource) {
             this.powerSource = null;
         }     
+    }
+
+    /// <summary>
+    /// Destroys this consumable in half a second
+    /// Called by the animator controller when the consumable is done being active
+    /// </summary>
+    public void DestroyConsumable()
+    {
+        Destroy(this.gameObject, 0.5f);
     }
 }

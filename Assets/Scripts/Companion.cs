@@ -68,7 +68,7 @@ public class Companion : PowerSource, IRespawnable
     /// <summary>
     /// Initialize
     /// </summary>
-    void Start()
+    void Awake()
     {
         this.QueueLights();
         this.maxPower = this.currentPower = this.lights.Count;

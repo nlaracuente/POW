@@ -49,6 +49,14 @@ public class PowerSource : MonoBehaviour
     }
 
     /// <summary>
+    ///  Start draining energy
+    /// </summary>
+    void Start()
+    {
+        StartCoroutine("DrainPowerSupply");
+    }
+
+    /// <summary>
     /// Returns true while there is still power
     /// </summary>
     public bool HasPower
