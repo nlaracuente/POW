@@ -159,7 +159,7 @@ public class Player : MonoBehaviour, IRespawnable
     /// </summary>
     void Start()
     {
-        this.animator = this.transform.FindChild("Model").GetComponent<Animator>();
+        this.animator = this.transform.Find("Model").GetComponent<Animator>();
         this.levelController = FindObjectOfType<LevelController>();
         this.companion = FindObjectOfType<Companion>();
         this.rigidbody = GetComponent<Rigidbody>();
