@@ -82,7 +82,7 @@ public class Companion : PowerSource, IRespawnable
     /// </summary>
     void QueueLights()
     {
-        GameObject powerGO = this.transform.FindChild("Power").gameObject;
+        GameObject powerGO = this.transform.Find("Power").gameObject;
         for(int i = 0; i < powerGO.transform.childCount; i++) {
             GameObject light = powerGO.transform.GetChild(i).gameObject;
 
