@@ -30,10 +30,8 @@ public class BombDamageCollider : MonoBehaviour
         }
 
         if(other.tag == "Player") {
-            this.damageInflicted = true;
-            Player player = other.GetComponent<Player>();
-            player.DisablePlayerControl();            
-            player.PlayerDamaged();
+             Player player = other.GetComponent<Player>();
+             player.PlayerDamaged();           
         }
     }
 }

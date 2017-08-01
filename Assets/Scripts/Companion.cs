@@ -109,10 +109,16 @@ public class Companion : PowerSource, IRespawnable
     Player player;
 
     /// <summary>
+    /// Holds a reference to the menu
+    /// </summary>
+    MenuCanvas menu;
+
+    /// <summary>
     /// Initialize
     /// </summary>
     void Awake()
     {
+        this.menu = FindObjectOfType<MenuCanvas>();
         this.player = FindObjectOfType<Player>();
         this.QueueLights(false);
         this.maxPower = this.lights.Count;
@@ -170,6 +176,7 @@ public class Companion : PowerSource, IRespawnable
             if(!isGrounded && !this.isFalling) {
                 this.TriggerFall();
             }
+
         // Follow parent
         } else {
 
@@ -257,6 +264,11 @@ public class Companion : PowerSource, IRespawnable
     /// <param name="total"></param>
     public override void ConsumePower(int total)
     {
+        // Don't consume while the menu is opened
+        if(this.menu.isMenuOpened) {
+            return;
+        }
+
         base.ConsumePower(total);
 
         // There may be a chance that the recall and the last drain supply

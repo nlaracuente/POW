@@ -195,7 +195,6 @@ public class Player : MonoBehaviour, IRespawnable
     /// <summary>
     /// True while the player is moving
     /// </summary>
-    [SerializeField]
     bool isMoving = false;
 
     /// <summary>
@@ -613,8 +612,9 @@ public class Player : MonoBehaviour, IRespawnable
         this.isFalling = false;
         this.EnablePlayerControl();
 
-        // Carrying the companion - make it snap into place
-        if(this.isCarryingCompanion) {
+        // Always trigger a the companion to respawn 
+        // even if it is not being carried so long as it has been carried once
+        if(this.companionHasBeenPickedup) {
             this.companion.transform.position = position;
         }
     }
@@ -634,6 +634,7 @@ public class Player : MonoBehaviour, IRespawnable
     /// </summary>
     public void DisablePlayerControl()
     {
+        this.inputVector = Vector3.zero;
         this.StopPlayerRoutines();
         this.canMove = false;
         this.canRotate = false;
@@ -704,5 +705,19 @@ public class Player : MonoBehaviour, IRespawnable
         if(this.isCarryingCompanion) {
             this.companion.transform.position = destination;
         }
+    }
+
+    /// <summary>
+    /// Player can open the menu so long as they are not moving, falling, or disabled
+    /// </summary>
+    public bool CanOpenMenu()
+    {
+        bool canOpen = true;
+
+        if(this.isFalling || this.isMoving || !this.playerEnabled) {
+            canOpen = false;
+        }
+
+        return canOpen;
     }
 }
