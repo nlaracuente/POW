@@ -556,6 +556,9 @@ public class Player : MonoBehaviour, IRespawnable
     /// </summary>
     void StopPlayerRoutines()
     {
+        // Since we are stopping the movement corouting
+        // then the player is no longer moving
+        this.isMoving = false;
         StopCoroutine("SmoothMove");
         StopCoroutine("SmoothRotate");
     }
@@ -705,8 +708,8 @@ public class Player : MonoBehaviour, IRespawnable
     }
 
     /// <summary>
-    /// Pops the player at the given destination
-    /// Making sure to move the companion too if it is carrying it
+    /// "Teleports" the player and the companion to the given location
+    /// Stops all running coroutines to ignore "movement" 
     /// </summary>
     /// <param name="destination"></param>
     public void TeleportTo(Vector3 destination)
