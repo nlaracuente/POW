@@ -588,7 +588,7 @@ public class Player : MonoBehaviour, IRespawnable
     /// Called by any object that can damage the player
     /// Cancels player movement and triggers a respawn
     /// </summary>
-    public void PlayerDamaged()
+    public void TakeDamage()
     {
         this.StopPlayerRoutines();
         this.DisablePlayerControl();

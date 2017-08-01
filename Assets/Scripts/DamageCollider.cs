@@ -14,7 +14,7 @@ public class DamageCollider : MonoBehaviour
             // Snap to this tile 
             player.transform.position = this.transform.position;
             
-            player.PlayerDamaged();
+            player.TakeDamage();
         }
     }
 }
