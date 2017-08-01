@@ -249,6 +249,16 @@ public class Player : MonoBehaviour, IRespawnable
     /// </summary>
     void Update()
     {
+        // Always allow the hard respawn
+        if(Input.GetButton("Respawn")) {
+            if(!this.respawnTriggered) {
+                this.respawnTriggered = true;
+                this.HardRespawn();
+            }
+        } else {
+            this.respawnTriggered = false;
+        }
+
         // Not allowed to do anything
         if(!this.playerEnabled) {
             return;
@@ -318,18 +328,6 @@ public class Player : MonoBehaviour, IRespawnable
         } else {
             this.companionRecalled = false;
         }
-
-        // Respawn
-        if(Input.GetButton("Respawn")) {
-
-            // Not recalled yet
-            if(!this.respawnTriggered) {
-                this.Respawn();
-            }
-        } else {
-            this.respawnTriggered = false;
-        }
-
     }
 
     /// <summary>
@@ -625,8 +623,20 @@ public class Player : MonoBehaviour, IRespawnable
     /// </summary>
     public void Respawn()
     {
-
         this.Landed(this.checkpointPosition);
+    }
+
+    /// <summary>
+    /// Player invoked respawn
+    /// Takes the player and the companion to the last checkpoint
+    /// This is functions as both a fail safe if the player gets stuck
+    /// and as a way for the player to retry a section should they want to
+    /// </summary>
+    void HardRespawn()
+    {
+        this.DisablePlayerControl();
+        this.StopPlayerRoutines();
+        this.Respawn();
     }
 
     /// <summary>
