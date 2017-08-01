@@ -29,13 +29,17 @@ public class Consumable : MonoBehaviour, IConsumable
     /// </summary>
     [SerializeField]
     protected bool isActivated = false;
+    public bool IsActive
+    {
+        get { return this.isActivated; }
+    }
 
     /// <summary>
     /// True when the consumable is no longer active
     /// Default is the consumable is always inactive
     /// </summary>
     [SerializeField]
-    bool isDeactivated = true;
+    protected bool isDeactivated = true;
 
     /// <summary>
     /// The current power source in range powering this consumable
@@ -86,7 +90,7 @@ public class Consumable : MonoBehaviour, IConsumable
     /// Powers on this consumable
     /// </summary>
     /// <param name="source"></param>
-    public void Activate()
+    public virtual void Activate()
     {
         // Play the animation only once
         if(!this.isActivated) {

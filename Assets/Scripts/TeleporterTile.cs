@@ -26,6 +26,12 @@ public class TeleporterTile : Consumable
     MeshRenderer meshRenderer;
 
     /// <summary>
+    /// True when the teleported is waiting for a target to arrive
+    /// </summary>
+    [SerializeField]
+    internal bool isWaitingForTarget = false;
+
+    /// <summary>
     /// Updates the texture to match its current state
     /// </summary>
     void LateUpdate()

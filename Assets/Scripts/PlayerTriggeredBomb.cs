@@ -3,9 +3,11 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// Checks if the player is within range and triggers damage
+/// This trigger occurs when the player walks into the bomb 
+/// when the bomb is not active because the companion does 
+/// not have any power or the companion is not with the player
 /// </summary>
-public class BombDamageCollider : MonoBehaviour
+public class PlayerTriggeredBomb : MonoBehaviour
 {
     /// <summary>
     /// A reference to the parent bomb
@@ -21,23 +23,20 @@ public class BombDamageCollider : MonoBehaviour
         this.bomb = GetComponentInParent<BombTile>();
     }
 
-  
     /// <summary>
-    /// If the parent is "active" then we want to trigger the bomb as the player
-    /// has stepped into the bomb's range
+    /// Kaboom! baby
     /// </summary>
-    /// <param name="other"></param>
-	void OnTriggerStay(Collider other)
+    void OnTriggerEnter(Collider other)
     {
-        // Wait until active
-        if(!this.bomb.IsActive || this.bomb.isTriggered) {
+        // Already went off - don't retrigger
+        if(this.bomb.isTriggered) {
             return;
         }
-        
+
         if(other.tag == "Player") {
             this.bomb.isTriggered = true;
-            Player player = other.GetComponent<Player>();
-            player.TakeDamage();
+            bomb.Activate();
         }
     }
+	
 }

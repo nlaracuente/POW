@@ -75,6 +75,7 @@ public class AudioManager : MonoBehaviour
         TeleportalUsed,
         SpikesActivated,
         SpikesDeactivated,
+		CompanionRecall,
         NoSound,
     }
 

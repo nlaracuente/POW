@@ -227,7 +227,7 @@ public class Companion : PowerSource, IRespawnable
     /// <param name="destination"></param>
     public void Recalled(Transform parent)
     {
-        AudioManager.instance.PlaySound(AudioManager.SoundName.CompanionPickedUp);
+        AudioManager.instance.PlaySound(AudioManager.SoundName.CompanionRecall);
         this.transform.position = this.player.transform.position;
     }
 

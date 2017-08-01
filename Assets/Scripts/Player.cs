@@ -249,6 +249,16 @@ public class Player : MonoBehaviour, IRespawnable
     /// </summary>
     void Update()
     {
+        // Always allow the hard respawn
+        if(Input.GetButton("Respawn")) {
+            if(!this.respawnTriggered) {
+                this.respawnTriggered = true;
+                this.HardRespawn();
+            }
+        } else {
+            this.respawnTriggered = false;
+        }
+
         // Not allowed to do anything
         if(!this.playerEnabled) {
             return;
@@ -318,18 +328,6 @@ public class Player : MonoBehaviour, IRespawnable
         } else {
             this.companionRecalled = false;
         }
-
-        // Respawn
-        if(Input.GetButton("Respawn")) {
-
-            // Not recalled yet
-            if(!this.respawnTriggered) {
-                this.Respawn();
-            }
-        } else {
-            this.respawnTriggered = false;
-        }
-
     }
 
     /// <summary>
@@ -558,6 +556,9 @@ public class Player : MonoBehaviour, IRespawnable
     /// </summary>
     void StopPlayerRoutines()
     {
+        // Since we are stopping the movement corouting
+        // then the player is no longer moving
+        this.isMoving = false;
         StopCoroutine("SmoothMove");
         StopCoroutine("SmoothRotate");
     }
@@ -590,7 +591,7 @@ public class Player : MonoBehaviour, IRespawnable
     /// Called by any object that can damage the player
     /// Cancels player movement and triggers a respawn
     /// </summary>
-    public void PlayerDamaged()
+    public void TakeDamage()
     {
         this.StopPlayerRoutines();
         this.DisablePlayerControl();
@@ -625,8 +626,20 @@ public class Player : MonoBehaviour, IRespawnable
     /// </summary>
     public void Respawn()
     {
-
         this.Landed(this.checkpointPosition);
+    }
+
+    /// <summary>
+    /// Player invoked respawn
+    /// Takes the player and the companion to the last checkpoint
+    /// This is functions as both a fail safe if the player gets stuck
+    /// and as a way for the player to retry a section should they want to
+    /// </summary>
+    void HardRespawn()
+    {
+        this.DisablePlayerControl();
+        this.StopPlayerRoutines();
+        this.Respawn();
     }
 
     /// <summary>
@@ -695,8 +708,8 @@ public class Player : MonoBehaviour, IRespawnable
     }
 
     /// <summary>
-    /// Pops the player at the given destination
-    /// Making sure to move the companion too if it is carrying it
+    /// "Teleports" the player and the companion to the given location
+    /// Stops all running coroutines to ignore "movement" 
     /// </summary>
     /// <param name="destination"></param>
     public void TeleportTo(Vector3 destination)

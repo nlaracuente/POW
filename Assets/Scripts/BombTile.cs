@@ -1,17 +1,12 @@
 ﻿using UnityEngine;
 
+/// <summary>
+/// Bombs are unique in that their effect is instance and can happened even when not active
+/// Players can walk into the bomb not carrying the companion and trigger it if walking into
+/// the bomb or active it when one tile away if they have the companion and it has power
+/// </summary>
 public class BombTile : Consumable
 {
-    /// <summary>
-    /// When true it will check if the player is within range and inflict damage
-    /// </summary>
-    bool inflictDamage = false;
-
-    /// <summary>
-    /// Prevents damage from being inflicted more than once
-    /// </summary>
-    bool damageInflicted = false;
-
     /// <summary>
     /// How fast to rate 
     /// </summary>
@@ -25,28 +20,42 @@ public class BombTile : Consumable
     Transform bombTransform;
 
     /// <summary>
-    /// The script containing the trigger collider that allows us to inflict damage
+    /// True to avoid triggering the bomb more than once
     /// </summary>
-    [SerializeField]
-    BombDamageCollider damageCollider;
+    internal bool isTriggered = false;
 
     /// <summary>
-    /// Rotate while damage has not activated 
+    /// A reference to the player script
     /// </summary>
-    void LateUpdate()
+    Player player;
+
+    /// <summary>
+    /// Initialize
+    /// </summary>
+    void Start()
     {
-        if(!this.isActivated) {
-            this.bombTransform.Rotate(new Vector3(0f, this.rotationSpeed * Time.deltaTime, 0f));
-        }
+        this.player = FindObjectOfType<Player>();
     }
 
     /// <summary>
-    /// We are good to inflict damage
+    /// Rotate the bomb
+    /// Disables the bomb triggered flag if the bomb is not active
     /// </summary>
-    public void InflictDamage()
+    void LateUpdate()
     {
-        if(this.damageCollider != null) { 
-            this.damageCollider.canInflictDamage = true;
+        if(this.isDeactivated) {
+            this.isTriggered = false;
         }
+
+        this.bombTransform.Rotate(new Vector3(0f, this.rotationSpeed * Time.deltaTime, 0f));
+    }
+
+    /// <summary>
+    /// Notify the player to take damage
+    /// </summary>
+    public override void Activate()
+    {
+        base.Activate();
+        this.player.TakeDamage();
     }
 }

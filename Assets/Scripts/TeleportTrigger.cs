@@ -4,6 +4,7 @@ using UnityEngine;
 
 /// <summary>
 /// Triggers the player to teleport to the associated teleporter
+/// Teleporting happens only once each time the player steps into the portal
 /// </summary>
 public class TeleportTrigger : MonoBehaviour
 {
@@ -24,6 +25,7 @@ public class TeleportTrigger : MonoBehaviour
     /// <summary>
     /// True when the teleportation has been triggered
     /// </summary>
+    [SerializeField]
     bool isTeleporting = false;
 
     /// <summary>
@@ -31,33 +33,48 @@ public class TeleportTrigger : MonoBehaviour
     /// so as to prevent the other teleporter from immediatly sending the 
     /// target back to this teleporter on arrival
     /// </summary>
-    protected bool waitingForTarget = false;
-
-    /// <summary>
-    /// Triggers teleportation if not already teleporting
-    /// </summary>
-    /// <param name="other"></param>
-    void OnTriggerStay(Collider other)
+    internal bool WaitForTarget
     {
-        // Only if not waiting for the target 
-        if(!this.waitingForTarget && other.tag == "Player") {
-
-            if(!this.isTeleporting) {
-                StartCoroutine("Teleport", other.GetComponent<Player>());
-            }
+        get
+        {
+            return this.portal.isWaitingForTarget;
+        }
+        set
+        {
+            this.portal.isWaitingForTarget = value;
         }
     }
 
     /// <summary>
-    /// Target has left the building
-    /// Reset the teleporter's state
+    /// A reference to this parent's teleporter
+    /// </summary>
+    [SerializeField]
+    TeleporterTile portal;
+
+    /// <summary>
+    /// Stores a reference to the parent portal
+    /// </summary>
+    void Start()
+    {
+        this.portal = GetComponentInParent<TeleporterTile>();
+    }
+
+    /// <summary>
+    /// Notifies the connecting teleported we are sending a target over there
+    /// Sets the "teleporting" flag ON to avoid double teleporting since we use a coroutine
     /// </summary>
     /// <param name="other"></param>
-    void OnTriggerExit(Collider other)
+    void OnTriggerStay(Collider other)
     {
-        if(other.tag == "Player") {
-            this.isTeleporting = false;
-            this.waitingForTarget = false;
+        // Cannot teleport if waiting for the target
+        if(this.WaitForTarget) {
+            return;
+        }
+        
+        if(other.tag == "Player" && !this.isTeleporting) {
+            this.isTeleporting = true;
+            this.associatedTeleporter.WaitForTarget = true;
+            StartCoroutine("Teleport", other.GetComponent<Player>());
         }
     }
 
@@ -72,15 +89,16 @@ public class TeleportTrigger : MonoBehaviour
         AudioManager.instance.PlaySound(AudioManager.SoundName.TeleportalUsed);
         player.DisablePlayerControl();
 
-        // Snap to this tile 
+        // Snap to this tile and notify the target portal the player arrived
         player.transform.position = this.transform.position;
+        player.TeleportTo(this.associatedTeleporter.transform.position);
 
-        this.isTeleporting = true;
-        this.associatedTeleporter.waitingForTarget = true;
+        // Now that the player is no longer on the teleporter
+        // We can disabling isTeleporting
+        this.isTeleporting = false;
 
-        player.TeleportTo(this.associatedTeleporter.transform.position);        
+        // Wait before returning control
         yield return new WaitForSeconds(this.waitTime);
-
         player.EnablePlayerControl();
     }
 }
