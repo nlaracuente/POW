@@ -16,7 +16,10 @@ public class VirtualDPadController : MonoBehaviour
     Dictionary<string, float> input = new Dictionary<string, float>{
         { "Horizontal", 0f },
         { "Vertical", 0f },
-        { "Magnet", 0f }
+        { "Respawn", 0f },
+        { "Recall", 0f },
+        { "Action", 0f },
+        { "Menu", 0f },
     };
 
     /// <summary>
@@ -41,6 +44,7 @@ public class VirtualDPadController : MonoBehaviour
         { Clickable.Value.Respawn,    1},
         { Clickable.Value.Recall,     1},
         { Clickable.Value.Action,     1},
+        { Clickable.Value.Menu,       1},
     };
 
     /// <summary>
@@ -62,8 +66,23 @@ public class VirtualDPadController : MonoBehaviour
     {
         Clickable.Value value = button.GetValue();
 
-        // Default to Magnet
-        string inputType = "Magnet";
+        // Default to Action
+        string inputType = "Action";
+
+        // Recall
+        if(value == Clickable.Value.Recall) {
+            inputType = "Recall";
+        }
+
+        // Respawn
+        if(value == Clickable.Value.Respawn) {
+            inputType = "Respawn";
+        }
+
+        // Menu
+        if(value == Clickable.Value.Menu) {
+            inputType = "Menu";
+        }
 
         // Horizontal input
         if(value == Clickable.Value.DPad_Left || value == Clickable.Value.DPad_Right) {
@@ -86,8 +105,23 @@ public class VirtualDPadController : MonoBehaviour
     {
         Clickable.Value value = button.GetValue();
 
-        // Default to Magnet
-        string inputType = "Magnet";
+        // Default to Action
+        string inputType = "Action";
+
+        // Recall
+        if(value == Clickable.Value.Recall) {
+            inputType = "Recall";
+        }
+
+        // Respawn
+        if(value == Clickable.Value.Respawn) {
+            inputType = "Respawn";
+        }
+
+        // Menu
+        if(value == Clickable.Value.Menu) {
+            inputType = "Menu";
+        }
 
         // Horizontal input
         if(value == Clickable.Value.DPad_Left || value == Clickable.Value.DPad_Right) {

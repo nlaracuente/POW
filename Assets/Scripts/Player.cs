@@ -211,10 +211,16 @@ public class Player : MonoBehaviour, IRespawnable
     Vector3 tileUnderneathPosition = Vector3.zero;
 
     /// <summary>
+    /// A reference to the virtual dpad controller
+    /// </summary>
+    VirtualDPadController dpad;
+
+    /// <summary>
     /// Initialize
     /// </summary>
     void Start()
     {
+        this.dpad = FindObjectOfType<VirtualDPadController>();
         this.animator = this.transform.Find("Model").GetComponent<Animator>();
         this.levelController = FindObjectOfType<LevelController>();
         this.companion = FindObjectOfType<Companion>();
@@ -250,7 +256,7 @@ public class Player : MonoBehaviour, IRespawnable
     void Update()
     {
         // Always allow the hard respawn
-        if(Input.GetButton("Respawn")) {
+        if(this.dpad.Input["Respawn"] == 1) {
             if(!this.respawnTriggered) {
                 this.respawnTriggered = true;
                 this.HardRespawn();
@@ -310,7 +316,7 @@ public class Player : MonoBehaviour, IRespawnable
         }
 
         // Pickup Companion
-        if(Input.GetButton("Pickup")) {
+        if(this.dpad.Input["Action"] == 1) {
             this.PickupCompanion();
 
         // Release companion
@@ -319,7 +325,7 @@ public class Player : MonoBehaviour, IRespawnable
         }
 
         // Recall companion
-        if(Input.GetButton("Recall")) {
+        if(this.dpad.Input["Recall"] == 1) {
 
             // Not recalled yet
             if(!this.companionRecalled) {
@@ -366,8 +372,8 @@ public class Player : MonoBehaviour, IRespawnable
     /// </summary>
     void SavePlayerInput()
     {
-        float h = Input.GetAxisRaw("Horizontal");
-        float v = Input.GetAxisRaw("Vertical");
+        float h = this.dpad.Input["Horizontal"];
+        float v = this.dpad.Input["Vertical"];
 
         // Prioritize horizontal
         if(h != 0f && v != 0f) {

@@ -60,12 +60,18 @@ public class MenuCanvas : MonoBehaviour
     /// Only opens the menu when the button is pressed
     /// </summary>
     bool isButtonPressed = false;
+
+    /// <summary>
+    /// A reference to the virtual dpad controller
+    /// </summary>
+    VirtualDPadController dpad;
     
     /// <summary>
-    /// 
+    /// Initialize
     /// </summary>
     void Start()
     {
+        this.dpad = FindObjectOfType<VirtualDPadController>();
         this.player = FindObjectOfType<Player>();
         this.companion = FindObjectOfType<Companion>();
 
@@ -81,7 +87,7 @@ public class MenuCanvas : MonoBehaviour
     /// </summary>
     void Update()
     {
-        if(Input.GetKey(KeyCode.Escape)) {
+        if(this.dpad.Input["Menu"] == 1) {
 
             // If player is moving ignore
             if(!this.player.CanOpenMenu()) {

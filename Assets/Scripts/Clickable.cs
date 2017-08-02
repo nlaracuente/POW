@@ -38,6 +38,7 @@ public class Clickable : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
         Respawn,
         Recall,
         Action,
+        Menu,
     };
 
     /// <summary>
