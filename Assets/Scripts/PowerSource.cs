@@ -73,6 +73,13 @@ public class PowerSource : MonoBehaviour
         get { return this.currentPower > 0; }
     }
 
+    /// <summary>
+    /// Sets the current power to 0
+    /// </summary>
+    public virtual void DrainAllPower()
+    {
+        this.currentPower = 0;
+    }
     
     /// <summary>
     /// Total amount of power to consume

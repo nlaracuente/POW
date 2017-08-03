@@ -77,6 +77,7 @@ public class AudioManager : MonoBehaviour
         SpikesDeactivated,
 		CompanionRecall,
         NoSound,
+        CompanionError,
     }
 
     /// <summary>

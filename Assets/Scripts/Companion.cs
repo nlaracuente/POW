@@ -268,6 +268,19 @@ public class Companion : PowerSource, IRespawnable
     }
 
     /// <summary>
+    /// Turns off all the lights and drains the reamining power
+    /// </summary>
+    public override void DrainAllPower()
+    {
+        base.DrainAllPower();
+        while(this.lights.Count > 0) {
+            GameObject lightGO = this.lights.Dequeue();
+            MeshRenderer lightRenderer = lightGO.GetComponent<MeshRenderer>();
+            lightRenderer.material = this.lightOffMaterial;
+        }
+    }
+
+    /// <summary>
     /// Overrides parent so that we can disable one of the lights
     /// </summary>
     /// <param name="total"></param>

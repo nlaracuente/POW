@@ -117,10 +117,8 @@ public class MenuCanvas : MonoBehaviour
     /// </summary>
     public void Play()
     {
-        // End screen - restart the player and companion position to do it all over
+        // End screen 
         if(this.creditsBG.activeSelf) {
-            this.player.transform.position = this.playerStartPos;
-            this.companion.transform.position = this.companionStartPos;
             this.creditsBG.SetActive(false);
         }
 
@@ -132,6 +130,7 @@ public class MenuCanvas : MonoBehaviour
 
     /// <summary>
     /// Shows the "thank you for playing"
+    /// Sends the player right back to the start in case they want to play again
     /// </summary>
     public void OpenCreditsMenu()
     {
@@ -139,6 +138,11 @@ public class MenuCanvas : MonoBehaviour
         this.Menu.SetActive(true);
         this.creditsBG.SetActive(true);
         this.player.DisablePlayerControl();
+        this.player.UpdateCheckpoint(this.playerStartPos);
+        this.companion.UpdateRespawnPoint(this.companionStartPos);
+        this.companion.DrainAllPower();
+        this.player.transform.position = this.playerStartPos;
+        this.companion.transform.position = this.companionStartPos;
     }
 
     /// <summary>

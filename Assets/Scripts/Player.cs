@@ -215,6 +215,7 @@ public class Player : MonoBehaviour, IRespawnable
     /// </summary>
     VirtualDPadController dpad;
     internal bool companionIsAttached;
+    private bool recallErrorSoundPlayed;
 
     /// <summary>
     /// Initialize
@@ -333,6 +334,7 @@ public class Player : MonoBehaviour, IRespawnable
                 this.RecallCompanion();
             }
         } else {
+            this.recallErrorSoundPlayed = false;
             this.companionRecalled = false;
         }
     }
@@ -472,7 +474,10 @@ public class Player : MonoBehaviour, IRespawnable
         if(this.companion.HasPower && !this.companion.IsCharging) {
             this.companionRecalled = true;
             this.companion.Recalled(this.companionParent);
-        }        
+        } else if(!this.recallErrorSoundPlayed) {
+            this.recallErrorSoundPlayed = true;
+            AudioManager.instance.PlaySound(AudioManager.SoundName.CompanionError);
+        }
     }
 
     /// <summary>
