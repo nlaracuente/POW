@@ -113,6 +113,24 @@ public class Companion : PowerSource, IRespawnable
     /// </summary>
     MenuCanvas menu;
 
+    public override bool IsCharging
+    {
+        get
+        {
+            return base.IsCharging;
+        }
+
+        set
+        {
+            // Only allow this while the companion is not being held
+            if(value && this.targetToFollow != null) {
+                return;
+            }
+
+            base.IsCharging = value;
+        }
+    }
+
     /// <summary>
     /// Initialize
     /// </summary>
@@ -176,16 +194,6 @@ public class Companion : PowerSource, IRespawnable
             if(!isGrounded && !this.isFalling) {
                 this.TriggerFall();
             }
-
-        // Follow parent
-        } else {
-
-            // Distance is close enough, just snap into place
-            if(Vector3.Distance(this.targetToFollow.position, this.transform.position) < this.distanceToTarget) {
-                this.transform.position = targetToFollow.position;
-            } else {
-                this.transform.position = Vector3.MoveTowards(this.transform.position, targetToFollow.position, this.followSpeed * Time.fixedDeltaTime);
-            }            
         }
     }
 
@@ -199,11 +207,25 @@ public class Companion : PowerSource, IRespawnable
         this.bodyCollider.enabled = false;
         this.rigidbody.useGravity = false;
         this.targetToFollow = parent;
-        
-        // Notify the player this has been picked up
-        // Also, enables recall since the player has picked it up at least once
         this.player.isCarryingCompanion = true;
         this.player.companionHasBeenPickedup = true;
+        StartCoroutine("AnimatePickup");
+    }
+
+    /// <summary>
+    /// Moves the companion until it is close enough to the targe to follow
+    /// When close enough, sets the target as the parent
+    /// </summary>
+    /// <returns></returns>
+    IEnumerator AnimatePickup()
+    {
+        while(Vector3.Distance(this.targetToFollow.position, this.transform.position) > this.distanceToTarget) {
+            this.transform.position = Vector3.MoveTowards(this.transform.position, targetToFollow.position, this.followSpeed * Time.fixedDeltaTime);
+            yield return new WaitForFixedUpdate();
+        }
+
+        this.player.companionIsAttached = true;        
+        //this.transform.SetParent(this.targetToFollow);        
     }
 
     /// <summary>
@@ -213,11 +235,14 @@ public class Companion : PowerSource, IRespawnable
     /// <param name="position"></param>
     public void Dropped()
     {
+        StopCoroutine("AnimatePickup");
+        this.player.companionIsAttached = false;
         AudioManager.instance.PlaySound(AudioManager.SoundName.CompanionDropped);
         this.rigidbody.useGravity = true;
         this.bodyCollider.enabled = true;
         this.targetToFollow = null;
         this.player.isCarryingCompanion = false;
+        this.transform.SetParent(null);
     }
 
     /// <summary>
@@ -237,6 +262,7 @@ public class Companion : PowerSource, IRespawnable
     /// </summary>
     public void TriggerFall()
     {
+        StopCoroutine("AnimatePickup");
         this.isFalling = true;
         this.targetToFollow = null;
         this.rigidbody.useGravity = true;
@@ -249,6 +275,7 @@ public class Companion : PowerSource, IRespawnable
     public void Respawn()
     {
         // Reset position
+        StopCoroutine("AnimatePickup");
         this.targetToFollow = null;
         this.isFalling = false;
         this.rigidbody.useGravity = false;

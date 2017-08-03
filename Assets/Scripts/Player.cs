@@ -214,6 +214,7 @@ public class Player : MonoBehaviour, IRespawnable
     /// A reference to the virtual dpad controller
     /// </summary>
     VirtualDPadController dpad;
+    internal bool companionIsAttached;
 
     /// <summary>
     /// Initialize
@@ -256,7 +257,7 @@ public class Player : MonoBehaviour, IRespawnable
     void Update()
     {
         // Always allow the hard respawn
-        if(this.dpad.Input["Respawn"] == 1) {
+        if(Input.GetButton("Respawn") || this.dpad.Input["Respawn"] == 1) {
             if(!this.respawnTriggered) {
                 this.respawnTriggered = true;
                 this.HardRespawn();
@@ -316,7 +317,7 @@ public class Player : MonoBehaviour, IRespawnable
         }
 
         // Pickup Companion
-        if(this.dpad.Input["Action"] == 1) {
+        if(Input.GetButton("Pickup") || this.dpad.Input["Action"] == 1) {
             this.PickupCompanion();
 
         // Release companion
@@ -325,7 +326,7 @@ public class Player : MonoBehaviour, IRespawnable
         }
 
         // Recall companion
-        if(this.dpad.Input["Recall"] == 1) {
+        if(Input.GetButton("Recall") || this.dpad.Input["Recall"] == 1) {
 
             // Not recalled yet
             if(!this.companionRecalled) {
@@ -372,8 +373,16 @@ public class Player : MonoBehaviour, IRespawnable
     /// </summary>
     void SavePlayerInput()
     {
-        float h = this.dpad.Input["Horizontal"];
-        float v = this.dpad.Input["Vertical"];
+        float h = Input.GetAxisRaw("Horizontal");
+        float v = Input.GetAxisRaw("Vertical");
+
+        // Check for virtual dpad
+        if(h == 0) {
+            h = this.dpad.Input["Horizontal"];
+        }
+        if(v == 0) {
+            v = this.dpad.Input["Vertical"];
+        }
 
         // Prioritize horizontal
         if(h != 0f && v != 0f) {
@@ -459,8 +468,11 @@ public class Player : MonoBehaviour, IRespawnable
             return;
         }
 
-        this.companionRecalled = true;
-        this.companion.Recalled(this.companionParent);
+        // Companion must have power and not be in a charge station
+        if(this.companion.HasPower && !this.companion.IsCharging) {
+            this.companionRecalled = true;
+            this.companion.Recalled(this.companionParent);
+        }        
     }
 
     /// <summary>
@@ -539,11 +551,26 @@ public class Player : MonoBehaviour, IRespawnable
         while(Vector3.Distance(this.transform.position, targetPosition) > this.distancePad) {
             Vector3 destination = Vector3.MoveTowards(this.transform.position, targetPosition, this.moveSpeed * Time.deltaTime);
             this.transform.position = destination;
+            if(this.companionIsAttached) {
+                this.companion.transform.position = new Vector3(
+                    destination.x,
+                    this.companion.transform.position.y,
+                    destination.z
+                );
+            }
             yield return new WaitForEndOfFrame();
         }
         
         // Snap into position
         this.transform.position = targetPosition;
+        if(this.companionIsAttached) {
+            this.companion.transform.position = new Vector3(
+                targetPosition.x,
+                this.companion.transform.position.y,
+                targetPosition.z
+            );
+        }
+
         this.isMoving = false;
         
         // Since we just finished moving, let's quickly check if the player is performing an action

@@ -31,7 +31,7 @@ public class PowerSource : MonoBehaviour
     /// </summary>
     [SerializeField]
     bool isCharging = false;
-    public bool IsCharging
+    public virtual bool IsCharging
     {
         get { return this.isCharging; }
 

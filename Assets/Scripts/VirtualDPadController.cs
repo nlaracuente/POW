@@ -48,6 +48,12 @@ public class VirtualDPadController : MonoBehaviour
     };
 
     /// <summary>
+    /// When not mobile it disables the buttons
+    /// </summary>
+    [SerializeField]
+    bool isMobile = true;
+
+    /// <summary>
     /// Register the controller to the child buttons to listed for the on pressed/released
     /// </summary>
     void Start()
@@ -55,6 +61,8 @@ public class VirtualDPadController : MonoBehaviour
         foreach(Clickable clickable in GetComponentsInChildren<Clickable>()) {
             clickable.PressedEvent += this.OnButtonPressed;
             clickable.ReleasedEvent += this.OnButtonReleased;
+
+            clickable.gameObject.SetActive(this.isMobile);
         }
     }
     
