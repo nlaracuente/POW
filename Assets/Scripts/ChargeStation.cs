@@ -19,7 +19,7 @@ public class ChargeStation : MonoBehaviour
     void OnTriggerStay(Collider other)
     {
         PowerSource source = other.GetComponent<PowerSource>();
-        if(source != null) {
+        if(source != null && this.source == null) {
             this.source = source;
             source.IsCharging = true;
         } 

@@ -112,25 +112,7 @@ public class Companion : PowerSource, IRespawnable
     /// Holds a reference to the menu
     /// </summary>
     MenuCanvas menu;
-
-    public override bool IsCharging
-    {
-        get
-        {
-            return base.IsCharging;
-        }
-
-        set
-        {
-            // Only allow this while the companion is not being held
-            if(value && this.targetToFollow != null) {
-                return;
-            }
-
-            base.IsCharging = value;
-        }
-    }
-
+    
     /// <summary>
     /// Initialize
     /// </summary>
