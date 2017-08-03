@@ -317,8 +317,12 @@ public class Player : MonoBehaviour, IRespawnable
             return;
         }
 
+        // Because the "tap" on the phone functions as a LMB which is the "Pickup" button
+        // we determine here if this is mobile and only use the mobile buttton and not listen to the Pickup button
+        bool pickupCompanion = this.dpad.IsMobile ? this.dpad.Input["Action"] == 1 : Input.GetButton("Pickup");
+
         // Pickup Companion
-        if(Input.GetButton("Pickup") || this.dpad.Input["Action"] == 1) {
+        if(pickupCompanion) {
             this.PickupCompanion();
 
         // Release companion

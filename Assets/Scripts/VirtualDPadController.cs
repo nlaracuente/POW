@@ -52,6 +52,7 @@ public class VirtualDPadController : MonoBehaviour
     /// </summary>
     [SerializeField]
     bool isMobile = true;
+    public bool IsMobile { get { return this.isMobile; } }
 
     /// <summary>
     /// Register the controller to the child buttons to listed for the on pressed/released

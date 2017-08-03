@@ -87,7 +87,7 @@ public class MenuCanvas : MonoBehaviour
     /// </summary>
     void Update()
     {
-        if(this.dpad.Input["Menu"] == 1) {
+        if(Input.GetKey(KeyCode.Escape) || this.dpad.Input["Menu"] == 1) {
 
             // If player is moving ignore
             if(!this.player.CanOpenMenu()) {
