@@ -332,9 +332,11 @@ public class Player : MonoBehaviour, IRespawnable
 
         // Recall companion
         if(Input.GetButton("Recall") || this.dpad.Input["Recall"] == 1) {
+            // Only if the player is still grounded
+            this.CheckIsGrounded();
 
             // Not recalled yet
-            if(!this.companionRecalled) {
+            if(!this.isFalling && !this.companionRecalled) {
                 this.RecallCompanion();
             }
         } else {

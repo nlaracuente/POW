@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -141,5 +142,10 @@ public class AudioManager : MonoBehaviour
         if(this.soundClips.ContainsKey(soundName)) {
             this.soundClips[soundName].Play(pitch);
         }
+    }
+
+    internal void PlaySound(SoundName companionDrain, object drainPitch)
+    {
+        throw new NotImplementedException();
     }
 }
