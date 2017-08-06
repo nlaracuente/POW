@@ -117,6 +117,7 @@ public class MenuCanvas : MonoBehaviour
     /// </summary>
     public void Play()
     {
+        Cursor.visible = false; 
         // End screen 
         if(this.creditsBG.activeSelf) {
             this.creditsBG.SetActive(false);
@@ -134,6 +135,7 @@ public class MenuCanvas : MonoBehaviour
     /// </summary>
     public void OpenCreditsMenu()
     {
+        Cursor.visible = true;
         this.isMenuOpened = true;
         this.Menu.SetActive(true);
         this.creditsBG.SetActive(true);
@@ -150,6 +152,7 @@ public class MenuCanvas : MonoBehaviour
     /// </summary>
     public void OpenMenu()
     {
+        Cursor.visible = true;
         this.Menu.SetActive(true);
         this.player.DisablePlayerControl();
     }

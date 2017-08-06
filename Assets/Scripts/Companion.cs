@@ -112,7 +112,13 @@ public class Companion : PowerSource, IRespawnable
     /// Holds a reference to the menu
     /// </summary>
     MenuCanvas menu;
-    
+
+    /// <summary>
+    /// Pitch level to use when draining
+    /// </summary>
+    [SerializeField]
+    float drainPitch = 1f;
+
     /// <summary>
     /// Initialize
     /// </summary>
@@ -296,8 +302,36 @@ public class Companion : PowerSource, IRespawnable
         // There may be a chance that the recall and the last drain supply
         // coroutine drained the last light already so we will not try to
         // drain unless we still have lights
-        if(this.lights.Count > 0) {
-            AudioManager.instance.PlaySound(AudioManager.SoundName.CompanionDrain);
+        if(this.lights.Count > 0) {            
+            // Determine the pitch based on the total remaining lights
+            float percent = ((float)this.lights.Count / (float)this.maxPower) * 100f;
+            float pitch = 1f;
+
+            // Set the pitch based on the percentage of "lights" left
+            if(percent < 75f) {
+                pitch = 1.05f;
+            }
+
+            if(percent < 50f) {
+                pitch = 1.10f;
+            }
+
+            if(percent < 40f) {
+                pitch = 1.15f;
+            }
+
+            if(percent < 25f) {
+                pitch = 1.20f;
+            }
+
+            if(percent < 15f) {
+                pitch = 1.25f;
+            }
+
+            AudioManager.instance.PlaySound(
+                AudioManager.SoundName.CompanionDrain,
+                pitch
+            );
             GameObject lightGO = this.lights.Dequeue();
             MeshRenderer lightRenderer = lightGO.GetComponent<MeshRenderer>();
             lightRenderer.material = this.lightOffMaterial;

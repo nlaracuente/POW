@@ -17,7 +17,13 @@ public class SoundClip
     /// volume level to play this clip at
     /// </summary>
     [Range(0, 1)]
-    public float volume = 1f;
+    public float volume = 1f;    
+
+    /// <summary>
+    /// volume level to play this clip at
+    /// </summary>
+    [Range(0, 3)]
+    public float pitch = 1f;
 
     /// <summary>
     /// The audio clip component
@@ -42,9 +48,10 @@ public class SoundClip
     /// <summary>
     /// Plays this sound clip if not already playing
     /// </summary>
-    public void Play()
+    public void Play(float pitch = -1)
     {
         this.source.volume = this.volume;
+        this.source.pitch = pitch > -1 ? pitch : this.pitch;
         this.source.Play();
     }
 }
@@ -129,10 +136,10 @@ public class AudioManager : MonoBehaviour
     /// Plays the given sound if it exists
     /// </summary>
     /// <param name="soundName"></param>
-    public void PlaySound(SoundName soundName)
+    public void PlaySound(SoundName soundName, float pitch = -1)
     {
         if(this.soundClips.ContainsKey(soundName)) {
-            this.soundClips[soundName].Play();
+            this.soundClips[soundName].Play(pitch);
         }
     }
 }
