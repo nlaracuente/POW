@@ -182,7 +182,10 @@ public class Companion : PowerSource, IRespawnable
     /// </summary>
     void FixedUpdate()
     {
-        if(this.targetToFollow == null) {
+        // As long as the companion is not being picked up
+        // then we will check for a floor
+        // otherwise, the player determines if we are falling
+        if(!this.player.isCarryingCompanion) {
 
             GameObject objectBellow = this.levelController.GetObjectUnderPosition(
                     this.rigidbody.position, 

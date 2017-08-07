@@ -742,11 +742,7 @@ public class Player : MonoBehaviour, IRespawnable
     public void UpdateCheckpoint(Vector3 position)
     {
         this.checkpointPosition = position;
-
-        // Update the companions' respawn point
-        if(this.isCarryingCompanion) {
-            this.companion.UpdateRespawnPoint(position);
-        }
+        this.companion.UpdateRespawnPoint(position);
     }
 
     /// <summary>
