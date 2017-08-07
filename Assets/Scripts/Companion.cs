@@ -120,6 +120,12 @@ public class Companion : PowerSource, IRespawnable
     float drainPitch = 1f;
 
     /// <summary>
+    /// The layer associated with the floor
+    /// </summary>
+    [SerializeField]
+    LayerMask floorMask;
+
+    /// <summary>
     /// Initialize
     /// </summary>
     void Awake()
@@ -177,12 +183,29 @@ public class Companion : PowerSource, IRespawnable
     void FixedUpdate()
     {
         if(this.targetToFollow == null) {
-            bool isGrounded = this.levelController.GetObjectUnderPosition(this.rigidbody.position, this.rayStart, this.rayEnd, 0);
 
-            if(!isGrounded && !this.isFalling) {
+            GameObject objectBellow = this.levelController.GetObjectUnderPosition(
+                    this.rigidbody.position, 
+                    this.rayStart, 
+                    this.rayEnd, 
+                    this.floorMask
+            );
+
+            if(objectBellow == null && !this.isFalling) {
                 this.TriggerFall();
+            } else if(objectBellow != null) {               
+                this.Land();
             }
         }
+    }
+
+    /// <summary>
+    /// Landed
+    /// </summary>
+    public void Land()
+    {
+        this.rigidbody.useGravity = false;
+        this.isFalling = false;
     }
 
     /// <summary>
@@ -212,8 +235,8 @@ public class Companion : PowerSource, IRespawnable
             yield return new WaitForFixedUpdate();
         }
 
-        this.player.companionIsAttached = true;        
-        //this.transform.SetParent(this.targetToFollow);        
+        this.player.companionIsAttaching = false;
+        this.player.companionIsAttached = true;
     }
 
     /// <summary>

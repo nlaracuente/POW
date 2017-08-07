@@ -214,8 +214,28 @@ public class Player : MonoBehaviour, IRespawnable
     /// A reference to the virtual dpad controller
     /// </summary>
     VirtualDPadController dpad;
-    internal bool companionIsAttached;
-    private bool recallErrorSoundPlayed;
+
+    /// <summary>
+    /// True when the companion has finished attaching
+    /// </summary>
+    internal bool companionIsAttached = false;
+
+    /// <summary>
+    /// True while waiting for the the companion to finish attaching
+    /// </summary>
+    internal bool companionIsAttaching = false;
+
+    /// <summary>
+    /// True when the recall error button has been pressed
+    /// </summary>
+    bool recallErrorSoundPlayed = false;
+
+    /// <summary>
+    /// A reference to the particle system
+    /// This plays when the player recalls the companion
+    /// </summary>
+    [SerializeField]
+    ParticleSystem particle;
 
     /// <summary>
     /// Initialize
@@ -330,18 +350,20 @@ public class Player : MonoBehaviour, IRespawnable
             this.DropCompanion();
         }
 
-        // Recall companion
-        if(Input.GetButton("Recall") || this.dpad.Input["Recall"] == 1) {
-            // Only if the player is still grounded
-            this.CheckIsGrounded();
+        if(!this.isCarryingCompanion) {
+            // Recall companion
+            if(Input.GetButton("Recall") || this.dpad.Input["Recall"] == 1) {
+                // Only if the player is still grounded
+                this.CheckIsGrounded();
 
-            // Not recalled yet
-            if(!this.isFalling && !this.companionRecalled) {
-                this.RecallCompanion();
+                // Not recalled yet
+                if(!this.isFalling && !this.companionRecalled) {
+                    this.RecallCompanion();
+                }
+            } else {
+                this.recallErrorSoundPlayed = false;
+                this.companionRecalled = false;
             }
-        } else {
-            this.recallErrorSoundPlayed = false;
-            this.companionRecalled = false;
         }
     }
 
@@ -367,9 +389,12 @@ public class Player : MonoBehaviour, IRespawnable
                 this.Landed(GOUnderneath.transform.position);
             }
        
-        // No gound found fall
-        }else {
-            if(!this.isMoving) {
+        // No ground found fall
+        } else {
+
+            // Wait until the player has arrived at their destination
+            // or wait for the companion to attach
+            if(!this.isMoving && !this.companionIsAttaching) {
                 this.TriggerFall();
             }
         }
@@ -449,6 +474,7 @@ public class Player : MonoBehaviour, IRespawnable
             return;
         }
 
+        this.companionIsAttaching = true;
         this.companion.PickedUp(this.companionParent);
     }
 
@@ -478,6 +504,7 @@ public class Player : MonoBehaviour, IRespawnable
 
         // Companion must have power and not be in a charge station
         if(this.companion.HasPower && !this.companion.IsCharging) {
+            this.particle.Play();
             this.companionRecalled = true;
             this.companion.Recalled(this.companionParent);
         } else if(!this.recallErrorSoundPlayed) {
