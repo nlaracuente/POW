@@ -185,30 +185,16 @@ public class Companion : PowerSource, IRespawnable
         // As long as the companion is not being picked up
         // then we will check for a floor
         // otherwise, the player determines if we are falling
-        if(!this.player.isCarryingCompanion) {
+        GameObject objectBellow = this.levelController.GetObjectUnderPosition(
+                this.rigidbody.position, 
+                this.rayStart, 
+                this.rayEnd, 
+                this.floorMask
+        );
 
-            GameObject objectBellow = this.levelController.GetObjectUnderPosition(
-                    this.rigidbody.position, 
-                    this.rayStart, 
-                    this.rayEnd, 
-                    this.floorMask
-            );
-
-            if(objectBellow == null && !this.isFalling) {
-                this.TriggerFall();
-            } else if(objectBellow != null) {               
-                this.Land();
-            }
-        }
-    }
-
-    /// <summary>
-    /// Landed
-    /// </summary>
-    public void Land()
-    {
-        this.rigidbody.useGravity = false;
-        this.isFalling = false;
+        if(objectBellow == null) {
+            this.TriggerFall();
+        } 
     }
 
     /// <summary>
@@ -218,6 +204,7 @@ public class Companion : PowerSource, IRespawnable
     public void PickedUp(Transform parent)
     {
         AudioManager.instance.PlaySound(AudioManager.SoundName.CompanionPickedUp);
+        this.isFalling = false;
         this.bodyCollider.enabled = false;
         this.rigidbody.useGravity = false;
         this.targetToFollow = parent;
@@ -281,7 +268,7 @@ public class Companion : PowerSource, IRespawnable
         // I believe because the "fall" clause becomes true while the companion is still attaching
         // itself to the player. To remedy this, we make this that none of this is true and then allow falling
         if(!forced) {
-            if(this.targetToFollow != null || this.player.isCarryingCompanion || this.player.companionIsAttaching || this.player.companionIsAttached) {
+            if(this.isFalling || this.targetToFollow != null || this.player.isCarryingCompanion || this.player.companionIsAttaching || this.player.companionIsAttached) {
                 return;
             }
         }        
