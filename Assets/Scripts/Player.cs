@@ -652,7 +652,7 @@ public class Player : MonoBehaviour, IRespawnable
         // Apply the same to the companion
         if(this.isCarryingCompanion) {
             this.isCarryingCompanion = false;
-            this.companion.TriggerFall();
+            this.companion.TriggerFall(true);
         }
 
         this.DisablePlayerControl();

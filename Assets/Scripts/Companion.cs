@@ -274,8 +274,18 @@ public class Companion : PowerSource, IRespawnable
     /// Deattaches itself rom the player
     /// Enables gravity to make the companion fall
     /// </summary>
-    public void TriggerFall()
+    /// <param name="forced">Forced is when the player triggers the fall</param>
+    public void TriggerFall(bool forced = false)
     {
+        // This may be overkill be we are seeing a bug where the randomly the companion falls
+        // I believe because the "fall" clause becomes true while the companion is still attaching
+        // itself to the player. To remedy this, we make this that none of this is true and then allow falling
+        if(!forced) {
+            if(this.targetToFollow != null || this.player.isCarryingCompanion || this.player.companionIsAttaching || this.player.companionIsAttached) {
+                return;
+            }
+        }        
+
         StopCoroutine("AnimatePickup");
         this.isFalling = true;
         this.targetToFollow = null;
